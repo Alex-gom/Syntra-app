@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syntra — Portal Contador</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --negro: #0D1F16;
+  --verde: #1B5E3B;
+  --verde-med: #2E7D52;
+  --verde-claro: #E8F5EE;
+  --verde-lima: #4CAF50;
+  --gris: #F5F7F5;
+  --gris-med: #D4DDD6;
+  --texto: #1A2E1F;
+  --suave: #6B8070;
+  --rojo: #C0392B;
+  --rojo-claro: #FDECEA;
+  --azul: #1E4A8A;
+  --azul-claro: #EAF0FB;
+  --sol: #E8A020;
+  --sol-claro: #FDF3E0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #EFF3F0; color: var(--texto); font-size: 13px; line-height: 1.5; min-height: 100vh; }
+
+/* HEADER */
+.header { background: var(--negro); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+.header-logo { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--verde-lima); letter-spacing: 2px; }
+.header-sub { font-size: 11px; color: #888; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.conn-status { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; }
+.conn-ok { background: var(--verde-claro); color: var(--verde); }
+.conn-err { background: var(--rojo-claro); color: var(--rojo); }
+.conn-loading { background: var(--sol-claro); color: #8B5E00; }
+
+.btn { padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; font-family: inherit; }
+.btn-primary { background: var(--verde); color: white; }
+.btn-primary:hover { background: var(--verde-med); }
+.btn-secondary { background: #1A3025; color: #CCC; border: 1px solid #2A4A35; }
+.btn-secondary:hover { background: #223830; }
+.btn-danger { background: var(--rojo-claro); color: var(--rojo); border: 1px solid var(--rojo); }
+.btn-sm { padding: 5px 10px; font-size: 11px; }
+
+/* CONTENIDO */
+.contenido { padding: 20px 24px; max-width: 1100px; margin: 0 auto; }
+
+/* VISTA */
+.vista { display: none; }
+.vista.active { display: block; }
+
+/* STATS */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: white; border-radius: 12px; padding: 16px; border: 1px solid var(--gris-med); }
+.stat-label { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--suave); margin-bottom: 8px; }
+.stat-valor { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.stat-sub { font-size: 11px; color: var(--suave); }
+.stat-verde .stat-valor { color: var(--verde); }
+.stat-rojo .stat-valor { color: var(--rojo); }
+.stat-azul .stat-valor { color: var(--azul); }
+.stat-sol .stat-valor { color: var(--sol); }
+
+/* TABLA CARTERA */
+.tabla-container { background: white; border-radius: 14px; border: 1px solid var(--gris-med); overflow: hidden; margin-bottom: 20px; }
+.tabla-header { padding: 16px 20px; border-bottom: 1px solid var(--gris-med); display: flex; justify-content: space-between; align-items: center; }
+.tabla-titulo { font-weight: 700; font-size: 15px; }
+
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: var(--gris); }
+th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--suave); white-space: nowrap; }
+tbody tr { border-bottom: 1px solid var(--gris); transition: background 0.15s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #FAFCFA; cursor: pointer; }
+td { padding: 12px 14px; font-size: 12.5px; vertical-align: middle; }
+.td-nombre { font-weight: 600; }
+.td-monto { font-weight: 600; color: var(--verde); }
+.td-pendiente { font-weight: 600; color: var(--rojo); }
+
+.badge { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+.badge-corriente { background: var(--verde-claro); color: var(--verde); }
+.badge-pendiente { background: var(--sol-claro); color: #8B5E00; }
+.badge-atrasado { background: var(--rojo-claro); color: var(--rojo); }
+.badge-completado { background: #E3F2FD; color: var(--azul); }
+
+/* DETALLE CLIENTE */
+.back-btn { display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--verde); font-weight: 600; font-size: 13px; margin-bottom: 16px; }
+.back-btn:hover { opacity: 0.8; }
+
+.cliente-header { background: var(--negro); border-radius: 14px; padding: 24px; color: white; margin-bottom: 20px; }
+.cliente-nombre { font-family: 'Playfair Display', serif; font-size: 26px; margin-bottom: 4px; }
+.cliente-rfc { font-size: 12px; color: #888; margin-bottom: 16px; }
+.cliente-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.cliente-stat { background: #122010; border-radius: 10px; padding: 12px; border: 1px solid #1E3A28; text-align: center; }
+.cliente-stat-label { font-size: 10px; color: #5A7A65; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.cliente-stat-valor { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--verde-lima); line-height: 1; }
+
+/* FACTURA GLOBAL */
+.factura-global-card { background: white; border-radius: 14px; border: 2px solid var(--verde-med); padding: 20px; margin-bottom: 20px; }
+.factura-global-titulo { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--verde); margin-bottom: 14px; }
+.factura-global-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.fg-campo { background: var(--gris); border-radius: 8px; padding: 10px 12px; }
+.fg-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--suave); margin-bottom: 3px; }
+.fg-valor { font-size: 13px; font-weight: 500; }
+.fg-input { width: 100%; padding: 8px 10px; border: 1.5px solid var(--gris-med); border-radius: 7px; font-size: 13px; font-family: inherit; background: white; outline: none; }
+.fg-input:focus { border-color: var(--verde); }
+
+/* PAGOS */
+.pagos-tabla { background: white; border-radius: 14px; border: 1px solid var(--gris-med); overflow: hidden; }
+.pagos-header { padding: 14px 20px; border-bottom: 1px solid var(--gris-med); display: flex; justify-content: space-between; align-items: center; }
+.pago-row { display: grid; grid-template-columns: 60px 100px 120px 1fr 80px 100px; gap: 10px; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--gris); transition: background 0.15s; }
+.pago-row:last-child { border-bottom: none; }
+.pago-row:hover { background: var(--gris); }
+.pago-row.editing { background: var(--verde-claro); }
+.pago-num { font-weight: 700; color: var(--suave); font-size: 12px; }
+.pago-fecha { font-size: 12px; color: var(--suave); }
+.pago-monto { font-weight: 600; color: var(--verde); font-size: 13px; }
+.pago-folio { font-size: 12px; font-family: monospace; }
+.pago-uuid { font-size: 10px; color: var(--suave); font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pago-input { width: 100%; padding: 6px 8px; border: 1.5px solid var(--gris-med); border-radius: 6px; font-size: 12px; font-family: inherit; background: white; outline: none; }
+.pago-input:focus { border-color: var(--verde); }
+.pago-header-row { display: grid; grid-template-columns: 60px 100px 120px 1fr 80px 100px; gap: 10px; padding: 10px 20px; background: var(--gris); border-bottom: 1px solid var(--gris-med); }
+.pago-header-cell { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--suave); }
+
+/* MODAL */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 20px 20px 0 0; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+.modal-header { padding: 20px 24px; border-bottom: 1px solid var(--gris-med); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; z-index: 1; }
+.modal-titulo { font-family: 'Playfair Display', serif; font-size: 20px; }
+.modal-close { width: 32px; height: 32px; border-radius: 8px; background: var(--gris); border: none; cursor: pointer; font-size: 16px; }
+.modal-body { padding: 20px 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--gris-med); display: flex; justify-content: flex-end; gap: 10px; background: white; position: sticky; bottom: 0; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-campo { display: flex; flex-direction: column; gap: 4px; }
+.form-campo.full { grid-column: 1 / -1; }
+.form-campo label { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--suave); }
+.form-campo input, .form-campo select { padding: 10px 12px; border: 1.5px solid var(--gris-med); border-radius: 9px; font-size: 13px; font-family: inherit; background: var(--gris); outline: none; transition: border 0.2s; width: 100%; }
+.form-campo input:focus, .form-campo select:focus { border-color: var(--verde); background: white; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--negro); color: white; padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 999; display: none; border-left: 4px solid var(--verde-lima); }
+.toast.show { display: block; }
+.toast.error { border-left-color: var(--rojo); }
+.toast.success { border-left-color: var(--verde-lima); }
+
+.loading { text-align: center; padding: 48px; color: var(--suave); }
+.loading-spinner { width: 28px; height: 28px; border: 3px solid var(--gris-med); border-top-color: var(--verde); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-logo">SYNTRA</div>
+    <div class="header-sub">Portal Contabilidad</div>
+  </div>
+  <div class="header-right">
+    <span class="conn-status conn-loading" id="conn-status">● Conectando...</span>
+    <button class="btn btn-primary" onclick="abrirNuevoCliente()">+ Nuevo cliente</button>
+  </div>
+</div>
+
+<div class="contenido">
+
+  <!-- VISTA LISTA -->
+  <div class="vista active" id="vista-lista">
+    <div class="stats-row" id="stats-cartera"></div>
+    <div class="tabla-container">
+      <div class="tabla-header">
+        <div class="tabla-titulo">Cartera de crédito</div>
+      </div>
+      <div id="tabla-cartera">
+        <div class="loading"><div class="loading-spinner"></div>Cargando...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA DETALLE -->
+  <div class="vista" id="vista-detalle">
+    <div class="back-btn" onclick="volverLista()">← Volver a cartera</div>
+    <div class="cliente-header">
+      <div class="cliente-nombre" id="det-nombre"></div>
+      <div class="cliente-rfc" id="det-rfc"></div>
+      <div class="cliente-stats" id="det-stats"></div>
+    </div>
+
+    <!-- FACTURA GLOBAL -->
+    <div class="factura-global-card">
+      <div class="factura-global-titulo">📄 Factura global del contrato</div>
+      <div class="factura-global-grid">
+        <div class="fg-campo" style="grid-column: 1 / -1">
+          <div class="fg-label">ID Factura SAT (UUID / CFDI)</div>
+          <input class="fg-input" type="text" id="fg-uuid" placeholder="UUID del SAT" onblur="guardarFacturaGlobal()">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--suave);margin-top:8px">Los cambios se guardan automáticamente al salir del campo.</div>
+    </div>
+
+    <!-- PAGOS -->
+    <div class="pagos-tabla">
+      <div class="pagos-header">
+        <div style="font-weight:700;font-size:15px">Historial de pagos</div>
+        <button class="btn btn-primary btn-sm" onclick="abrirNuevoPago()">+ Agregar pago</button>
+      </div>
+      <div class="pago-header-row">
+        <div class="pago-header-cell">Pago</div>
+        <div class="pago-header-cell">Fecha</div>
+        <div class="pago-header-cell">Monto</div>
+        <div class="pago-header-cell" style="grid-column: span 2">ID Factura SAT (UUID/CFDI)</div>
+        <div class="pago-header-cell">Estado</div>
+        <div class="pago-header-cell">Acciones</div>
+      </div>
+      <div id="lista-pagos"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL NUEVO CLIENTE -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-titulo" id="modal-cliente-titulo">Nuevo cliente financiado</div>
+      <button class="modal-close" onclick="cerrarModal('modal-cliente')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-campo full"><label>Nombre del cliente *</label><input type="text" id="nc-nombre" placeholder="Ej. SAPORI Operadora"></div>
+        <div class="form-campo full"><label>RFC</label><input type="text" id="nc-rfc" placeholder="Ej. SOC221018465"></div>
+        <div class="form-campo"><label>Monto total del proyecto ($)</label><input type="number" id="nc-total" placeholder="0"></div>
+        <div class="form-campo"><label>Anticipo recibido ($)</label><input type="number" id="nc-anticipo" placeholder="0"></div>
+        <div class="form-campo"><label>Pago mensual acordado ($)</label><input type="number" id="nc-mensual" placeholder="0"></div>
+        <div class="form-campo"><label>Plazo (meses)</label><input type="number" id="nc-meses" placeholder="12"></div>
+        <div class="form-campo"><label>Fecha de inicio</label><input type="date" id="nc-fecha"></div>
+        <div class="form-campo"><label>Folio factura global</label><input type="text" id="nc-folio" placeholder="Ej. F-001"></div>
+        <div class="form-campo full"><label>UUID factura global</label><input type="text" id="nc-uuid" placeholder="UUID del SAT"></div>
+        <div class="form-campo full"><label>Notas</label><input type="text" id="nc-notas" placeholder="Observaciones..."></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-cliente')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCliente()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO PAGO -->
+<div class="modal-overlay" id="modal-pago">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-titulo">Registrar pago</div>
+      <button class="modal-close" onclick="cerrarModal('modal-pago')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-campo"><label>Número de pago</label><input type="number" id="np-num" placeholder="1"></div>
+        <div class="form-campo"><label>Fecha de pago</label><input type="date" id="np-fecha"></div>
+        <div class="form-campo"><label>Monto ($)</label><input type="number" id="np-monto" placeholder="0"></div>
+        <div class="form-campo"><label>Estado</label>
+          <select id="np-estado">
+            <option value="pendiente">Pendiente</option>
+            <option value="pagado">Pagado</option>
+            <option value="atrasado">Atrasado</option>
+          </select>
+        </div>
+        <div class="form-campo full"><label>ID Factura SAT (UUID / CFDI)</label><input type="text" id="np-uuid" placeholder="UUID del SAT"></div>
+        <div class="form-campo full"><label>Notas</label><input type="text" id="np-notas" placeholder="Observaciones..."></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-pago')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarPago()">💾 Guardar pago</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://ypmkuroqjhgidqpjhvtj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwbWt1cm9xamhnaWRxcGpodnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTk2MTcsImV4cCI6MjA5NTU3NTYxN30.4yhzqtKRlWJNMbxUyXnTonIicdh8Ose1geHI7wBQlws';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const fmt = n => '$' + Number(n||0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtFecha = f => f ? new Date(f+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'}) : '—';
+
+let cartera = [];
+let pagosActuales = [];
+let clienteActual = null;
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function estadoBadge(estado) {
+  const map = {
+    pagado: '<span class="badge badge-corriente">Pagado</span>',
+    pendiente: '<span class="badge badge-pendiente">Pendiente</span>',
+    atrasado: '<span class="badge badge-atrasado">Atrasado</span>',
+    completado: '<span class="badge badge-completado">Completado</span>',
+  };
+  return map[estado] || `<span class="badge badge-pendiente">${estado}</span>`;
+}
+
+async function cargarCartera() {
+  const { data, error } = await db.from('cartera_credito').select('*').order('created_at', { ascending: true });
+  if (error) { showToast('Error al cargar cartera', 'error'); return; }
+  cartera = data || [];
+  renderCartera();
+}
+
+function renderCartera() {
+  // Stats
+  const totalCartera = cartera.reduce((s,c) => s + (c.monto_total||0), 0);
+  const totalCobrado = cartera.reduce((s,c) => s + (c.anticipo||0), 0);
+  const totalPendiente = cartera.reduce((s,c) => s + ((c.monto_total||0)-(c.anticipo||0)), 0);
+  const mensualTotal = cartera.reduce((s,c) => s + (c.pago_mensual||0), 0);
+
+  document.getElementById('stats-cartera').innerHTML = `
+    <div class="stat-card stat-azul"><div class="stat-label">Clientes financiados</div><div class="stat-valor">${cartera.length}</div><div class="stat-sub">contratos activos</div></div>
+    <div class="stat-card stat-verde"><div class="stat-label">Valor total cartera</div><div class="stat-valor" style="font-size:16px">${fmt(totalCartera)}</div></div>
+    <div class="stat-card stat-rojo"><div class="stat-label">Saldo pendiente</div><div class="stat-valor" style="font-size:16px">${fmt(totalPendiente)}</div></div>
+    <div class="stat-card stat-sol"><div class="stat-label">Ingreso mensual esperado</div><div class="stat-valor" style="font-size:16px">${fmt(mensualTotal)}</div></div>`;
+
+  // Tabla
+  if (cartera.length === 0) {
+    document.getElementById('tabla-cartera').innerHTML = '<div style="text-align:center;padding:48px;color:var(--suave)">Sin clientes financiados. Agrega el primero.</div>';
+    return;
+  }
+
+  document.getElementById('tabla-cartera').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Cliente</th><th>RFC</th><th>Total</th><th>Anticipo</th>
+        <th>Saldo restante</th><th>Pago mensual</th><th>Plazo</th>
+        <th>UUID Factura Global</th><th>Inicio</th>
+      </tr></thead>
+      <tbody>
+        ${cartera.map(c => `<tr onclick="verDetalle(${c.id})">
+          <td class="td-nombre">${c.cliente_nombre}</td>
+          <td style="font-size:11px;color:var(--suave)">${c.rfc||'—'}</td>
+          <td class="td-monto">${fmt(c.monto_total)}</td>
+          <td>${fmt(c.anticipo)}</td>
+          <td class="td-pendiente">${fmt((c.monto_total||0)-(c.anticipo||0))}</td>
+          <td style="font-weight:600">${fmt(c.pago_mensual)}</td>
+          <td>${c.meses_totales||'—'} meses</td>
+          <td style="font-size:11px;font-family:monospace">${c.uuid_factura_global ? c.uuid_factura_global.substring(0,20)+'...' : '<span style="color:var(--suave)">Sin UUID</span>'}</td>
+          <td style="font-size:11px;color:var(--suave)">${fmtFecha(c.fecha_inicio)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function verDetalle(id) {
+  clienteActual = cartera.find(c => c.id === id);
+  if (!clienteActual) return;
+
+  // Cargar pagos
+  const { data, error } = await db.from('cartera_pagos').select('*').eq('cartera_id', id).order('numero_pago', { ascending: true });
+  if (error) { showToast('Error al cargar pagos', 'error'); return; }
+  pagosActuales = data || [];
+
+  // Header cliente
+  document.getElementById('det-nombre').textContent = clienteActual.cliente_nombre;
+  document.getElementById('det-rfc').textContent = clienteActual.rfc || 'Sin RFC';
+
+  const pagados = pagosActuales.filter(p => p.estado === 'pagado' && p.numero_pago > 0).length;
+  const totalPagado = pagosActuales.filter(p => p.estado === 'pagado' && p.numero_pago > 0).reduce((s,p) => s + (p.monto||0), 0);
+  const saldoRestante = (clienteActual.monto_total||0) - (clienteActual.anticipo||0) - totalPagado;
+
+  document.getElementById('det-stats').innerHTML = `
+    <div class="cliente-stat"><div class="cliente-stat-label">Total proyecto</div><div class="cliente-stat-valor" style="font-size:16px">${fmt(clienteActual.monto_total)}</div></div>
+    <div class="cliente-stat"><div class="cliente-stat-label">Pago mensual</div><div class="cliente-stat-valor" style="font-size:16px">${fmt(clienteActual.pago_mensual)}</div></div>
+    <div class="cliente-stat"><div class="cliente-stat-label">Pagos realizados</div><div class="cliente-stat-valor">${pagados} / ${clienteActual.meses_totales||'?'}</div></div>
+    <div class="cliente-stat"><div class="cliente-stat-label">Saldo restante</div><div class="cliente-stat-valor" style="font-size:16px;color:#FF6B6B">${fmt(saldoRestante)}</div></div>`;
+
+  // Factura global
+  document.getElementById('fg-uuid').value = clienteActual.uuid_factura_global || '';
+
+  // Pagos
+  renderPagos();
+
+  // Cambiar vista
+  document.getElementById('vista-lista').classList.remove('active');
+  document.getElementById('vista-detalle').classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderPagos() {
+  if (pagosActuales.length === 0) {
+    document.getElementById('lista-pagos').innerHTML = '<div style="text-align:center;padding:32px;color:var(--suave)">Sin pagos registrados. Agrega el primero.</div>';
+    return;
+  }
+  document.getElementById('lista-pagos').innerHTML = pagosActuales.map(p => `
+    <div class="pago-row" id="pago-row-${p.id}">
+      <div class="pago-num">#${p.numero_pago}</div>
+      <div class="pago-fecha">${fmtFecha(p.fecha_pago)}</div>
+      <div class="pago-monto">${fmt(p.monto)}</div>
+      <div class="pago-uuid" title="${p.uuid_factura||''}">${p.uuid_factura || '<span style="color:var(--suave)">Sin ID</span>'}</div>
+      <div>${estadoBadge(p.estado)}</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-secondary btn-sm" onclick="editarPago(${p.id})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarPago(${p.id})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function editarPago(id) {
+  const p = pagosActuales.find(x => x.id === id);
+  if (!p) return;
+  const row = document.getElementById(`pago-row-${id}`);
+  row.classList.add('editing');
+  row.innerHTML = `
+    <div class="pago-num">#${p.numero_pago}</div>
+    <div><input class="pago-input" type="date" id="ep-fecha-${id}" value="${p.fecha_pago||''}"></div>
+    <div><input class="pago-input" type="number" id="ep-monto-${id}" value="${p.monto||0}"></div>
+    <div><input class="pago-input" type="text" id="ep-uuid-${id}" value="${p.uuid_factura||''}" placeholder="UUID/CFDI del SAT"></div>
+    <div><select class="pago-input" id="ep-estado-${id}">
+      <option value="pendiente" ${p.estado==='pendiente'?'selected':''}>Pendiente</option>
+      <option value="pagado" ${p.estado==='pagado'?'selected':''}>Pagado</option>
+      <option value="atrasado" ${p.estado==='atrasado'?'selected':''}>Atrasado</option>
+    </select></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-primary btn-sm" onclick="guardarEdicionPago(${id})">💾</button>
+      <button class="btn btn-secondary btn-sm" onclick="renderPagos()">✕</button>
+    </div>`;
+}
+
+async function guardarEdicionPago(id) {
+  const updates = {
+    fecha_pago: document.getElementById(`ep-fecha-${id}`).value || null,
+    monto: parseFloat(document.getElementById(`ep-monto-${id}`).value)||0,
+    uuid_factura: document.getElementById(`ep-uuid-${id}`).value,
+    estado: document.getElementById(`ep-estado-${id}`).value,
+  };
+  const { error } = await db.from('cartera_pagos').update(updates).eq('id', id);
+  if (error) { showToast('Error al guardar', 'error'); return; }
+  showToast('Pago actualizado ✓', 'success');
+  // Actualizar local
+  const idx = pagosActuales.findIndex(p => p.id === id);
+  if (idx >= 0) pagosActuales[idx] = { ...pagosActuales[idx], ...updates };
+  renderPagos();
+  // Actualizar stats
+  verDetalle(clienteActual.id);
+}
+
+async function eliminarPago(id) {
+  if (!confirm('¿Eliminar este pago?')) return;
+  const { error } = await db.from('cartera_pagos').delete().eq('id', id);
+  if (error) { showToast('Error al eliminar', 'error'); return; }
+  showToast('Pago eliminado', '');
+  pagosActuales = pagosActuales.filter(p => p.id !== id);
+  renderPagos();
+}
+
+async function guardarFacturaGlobal() {
+  if (!clienteActual) return;
+  const uuid = document.getElementById('fg-uuid').value.trim();
+  const { error } = await db.from('cartera_credito').update({
+    uuid_factura_global: uuid
+  }).eq('id', clienteActual.id);
+  if (error) return;
+  clienteActual.uuid_factura_global = uuid;
+  showToast('Factura global guardada ✓', 'success');
+}
+
+function abrirNuevoCliente() {
+  ['nc-nombre','nc-rfc','nc-total','nc-anticipo','nc-mensual','nc-meses','nc-fecha','nc-folio','nc-uuid','nc-notas'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('nc-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('modal-cliente').classList.add('open');
+}
+
+async function guardarCliente() {
+  const nombre = document.getElementById('nc-nombre').value.trim();
+  if (!nombre) { showToast('El nombre es obligatorio', 'error'); return; }
+  const data = {
+    cliente_nombre: nombre,
+    rfc: document.getElementById('nc-rfc').value,
+    monto_total: parseFloat(document.getElementById('nc-total').value)||0,
+    anticipo: parseFloat(document.getElementById('nc-anticipo').value)||0,
+    pago_mensual: parseFloat(document.getElementById('nc-mensual').value)||0,
+    meses_totales: parseInt(document.getElementById('nc-meses').value)||12,
+    fecha_inicio: document.getElementById('nc-fecha').value || null,
+    folio_factura_global: document.getElementById('nc-folio').value,
+    uuid_factura_global: document.getElementById('nc-uuid').value,
+    notas: document.getElementById('nc-notas').value,
+  };
+  const { error } = await db.from('cartera_credito').insert(data);
+  if (error) { showToast('Error al guardar', 'error'); return; }
+  showToast('Cliente agregado ✓', 'success');
+  cerrarModal('modal-cliente');
+  await cargarCartera();
+}
+
+function abrirNuevoPago() {
+  if (!clienteActual) return;
+  const siguienteNum = pagosActuales.length + 1;
+  document.getElementById('np-num').value = siguienteNum;
+  document.getElementById('np-monto').value = clienteActual.pago_mensual || '';
+  document.getElementById('np-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('np-estado').value = 'pendiente';
+  ['np-folio','np-uuid','np-notas'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('modal-pago').classList.add('open');
+}
+
+async function guardarPago() {
+  if (!clienteActual) return;
+  const data = {
+    cartera_id: clienteActual.id,
+    numero_pago: parseInt(document.getElementById('np-num').value)||1,
+    fecha_pago: document.getElementById('np-fecha').value || null,
+    monto: parseFloat(document.getElementById('np-monto').value)||0,
+    estado: document.getElementById('np-estado').value,
+    uuid_factura: document.getElementById('np-uuid').value,
+    notas: document.getElementById('np-notas').value,
+  };
+  const { error } = await db.from('cartera_pagos').insert(data);
+  if (error) { showToast('Error al guardar', 'error'); return; }
+  showToast('Pago registrado ✓', 'success');
+  cerrarModal('modal-pago');
+  // Recargar pagos
+  const { data: pagos } = await db.from('cartera_pagos').select('*').eq('cartera_id', clienteActual.id).order('numero_pago', { ascending: true });
+  pagosActuales = pagos || [];
+  renderPagos();
+  verDetalle(clienteActual.id);
+}
+
+function volverLista() {
+  document.getElementById('vista-detalle').classList.remove('active');
+  document.getElementById('vista-lista').classList.add('active');
+  clienteActual = null;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// INIT
+(async () => {
+  const statusEl = document.getElementById('conn-status');
+  try {
+    const { error } = await db.from('cartera_credito').select('count').limit(1);
+    if (error) throw error;
+    statusEl.textContent = '● Conectado';
+    statusEl.className = 'conn-status conn-ok';
+    await cargarCartera();
+  } catch(e) {
+    statusEl.textContent = '● Sin conexión';
+    statusEl.className = 'conn-status conn-err';
+    showToast('Error de conexión', 'error');
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syntra — Plataforma</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --negro: #0D1F16;
+  --blanco: #FFFFFF;
+  --sol: #4CAF50;
+  --sol-claro: #E8F5EE;
+  --verde: #1B5E3B;
+  --verde-claro: #E8F5EE;
+  --verde-lima: #4CAF50;
+  --gris: #F5F7F5;
+  --gris-med: #D4DDD6;
+  --texto: #1A2E1F;
+  --suave: #6B8070;
+  --rojo: #C0392B;
+  --rojo-claro: #FDECEA;
+  --azul: #1E4A8A;
+  --azul-claro: #EAF0FB;
+  --morado: #6B3FA0;
+  --morado-claro: #F0EBF8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #EFF3F0; color: var(--texto); font-size: 13px; line-height: 1.5; min-height: 100vh; }
+
+/* HEADER */
+.header { background: var(--negro); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+.header-left { display: flex; align-items: center; gap: 16px; }
+.header-logo { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--verde-lima); letter-spacing: 2px; }
+.header-title { font-size: 13px; font-weight: 500; color: #CCC; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.header-date { font-size: 11px; color: #888; }
+.conn-status { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; }
+.conn-ok { background: var(--verde-claro); color: var(--verde); }
+.conn-err { background: var(--rojo-claro); color: var(--rojo); }
+.conn-loading { background: var(--sol-claro); color: #8B5E00; }
+.btn { padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; font-family: inherit; }
+.btn-primary { background: var(--verde); color: white; }
+.btn-primary:hover { background: #2E7D52; }
+.btn-secondary { background: #1A3025; color: #CCC; border: 1px solid #2A4A35; }
+.btn-secondary:hover { background: #223830; }
+.btn-danger { background: var(--rojo-claro); color: var(--rojo); border: 1px solid var(--rojo); }
+
+/* TABS */
+.tabs { background: var(--negro); padding: 0 24px; display: flex; gap: 4px; border-top: 1px solid #2A2A28; }
+.tab { padding: 10px 16px; font-size: 12px; font-weight: 500; color: #888; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.tab.active { color: var(--sol); border-bottom-color: var(--sol); }
+.tab:hover { color: #CCC; }
+
+/* CONTENIDO */
+.contenido { padding: 20px 24px; }
+.vista { display: none; }
+.vista.active { display: block; }
+
+/* LOADING */
+.loading { text-align: center; padding: 48px; color: var(--suave); }
+.loading-spinner { width: 32px; height: 32px; border: 3px solid var(--gris-med); border-top-color: var(--sol); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* STATS */
+.stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: white; border-radius: 12px; padding: 16px; border: 1px solid var(--gris-med); }
+.stat-label { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--suave); margin-bottom: 8px; }
+.stat-valor { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.stat-sub { font-size: 11px; color: var(--suave); }
+.stat-verde .stat-valor { color: var(--verde); }
+.stat-sol .stat-valor { color: var(--sol); }
+.stat-rojo .stat-valor { color: var(--rojo); }
+.stat-azul .stat-valor { color: var(--azul); }
+
+/* KANBAN */
+.kanban { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; }
+.kanban::-webkit-scrollbar { height: 4px; }
+.kanban::-webkit-scrollbar-track { background: var(--gris); }
+.kanban::-webkit-scrollbar-thumb { background: var(--gris-med); border-radius: 2px; }
+.columna { min-width: 200px; max-width: 200px; background: var(--gris); border-radius: 12px; padding: 12px; flex-shrink: 0; }
+.columna-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.columna-nombre { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.columna-count { font-size: 11px; font-weight: 600; background: white; border-radius: 20px; padding: 2px 8px; color: var(--suave); }
+.columna-items { display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+
+/* TARJETAS */
+.tarjeta { background: white; border-radius: 10px; padding: 12px; border: 1px solid var(--gris-med); cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
+.tarjeta:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
+.tarjeta.baja-tension { border-left-color: var(--sol); }
+.tarjeta.media-tension { border-left-color: var(--verde); }
+.tarjeta-nombre { font-weight: 600; font-size: 12.5px; margin-bottom: 3px; }
+.tarjeta-tipo { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+.tipo-bt { color: var(--sol); }
+.tipo-mt { color: var(--verde); }
+.tarjeta-monto { font-size: 12px; font-weight: 600; color: var(--verde); margin-bottom: 3px; }
+.tarjeta-pendiente { font-size: 11px; color: var(--rojo); }
+.tarjeta-fecha { font-size: 10px; color: var(--suave); margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--gris); }
+.tarjeta-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.tag { font-size: 9px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; }
+.tag-cfe { background: var(--azul-claro); color: var(--azul); }
+.tag-extra { background: var(--morado-claro); color: var(--morado); }
+.empty-col { text-align: center; padding: 20px 8px; color: var(--suave); font-size: 11px; }
+
+/* TABLA */
+.tabla-container { background: white; border-radius: 14px; border: 1px solid var(--gris-med); overflow: hidden; }
+.tabla-header-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--gris-med); }
+.tabla-titulo { font-weight: 700; font-size: 15px; }
+.tabla-filtros { display: flex; gap: 8px; }
+.filtro { padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--gris-med); background: white; color: var(--suave); }
+.filtro.active { background: var(--negro); color: white; border-color: var(--negro); }
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: var(--gris); }
+th { padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--suave); white-space: nowrap; }
+tbody tr { border-bottom: 1px solid var(--gris); cursor: pointer; transition: background 0.15s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #FAFAF7; }
+td { padding: 12px 16px; font-size: 12.5px; vertical-align: middle; }
+.td-nombre { font-weight: 600; }
+.td-monto { font-weight: 600; color: var(--verde); }
+.td-pendiente { font-weight: 600; color: var(--rojo); }
+.badge-etapa { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+.etapa-1 { background: #F0EEE9; color: #666; }
+.etapa-2 { background: #FDF3E0; color: #8B5E00; }
+.etapa-3 { background: #FFF8E1; color: #7A5C00; }
+.etapa-4 { background: #E8F4FD; color: #1A5276; }
+.etapa-5 { background: var(--azul-claro); color: var(--azul); }
+.etapa-6 { background: var(--verde-claro); color: var(--verde); }
+.etapa-7 { background: #1B6B3A22; color: var(--verde); }
+.badge-cfe { font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+.cfe-pendiente { background: var(--sol-claro); color: #8B5E00; }
+.cfe-proceso { background: var(--azul-claro); color: var(--azul); }
+.cfe-listo { background: var(--verde-claro); color: var(--verde); }
+.cfe-na { background: var(--gris); color: var(--suave); }
+
+/* MODAL */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 16px; width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto; }
+.modal-header { padding: 20px 24px; border-bottom: 1px solid var(--gris-med); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; z-index: 1; }
+.modal-titulo { font-family: 'Playfair Display', serif; font-size: 20px; }
+.modal-close { width: 32px; height: 32px; border-radius: 8px; background: var(--gris); border: none; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.modal-body { padding: 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--gris-med); display: flex; justify-content: flex-end; gap: 10px; background: white; }
+.modal-section { margin-bottom: 20px; }
+.modal-section:last-child { margin-bottom: 0; }
+.modal-section-titulo { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--suave); margin-bottom: 12px; }
+.modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-campo { background: var(--gris); border-radius: 8px; padding: 10px 12px; }
+.modal-campo-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--suave); margin-bottom: 3px; }
+.modal-campo-valor { font-size: 13px; font-weight: 500; }
+.etapas-lista { display: flex; flex-direction: column; gap: 6px; }
+.etapa-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; background: var(--gris); }
+.etapa-item.completada { background: var(--verde-claro); }
+.etapa-item.activa { background: var(--sol-claro); }
+.etapa-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--gris-med); display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+.etapa-item.completada .etapa-check { background: var(--verde); border-color: var(--verde); color: white; }
+.etapa-item.activa .etapa-check { background: var(--sol); border-color: var(--sol); color: white; }
+.etapa-nombre-modal { font-size: 13px; font-weight: 500; }
+
+/* FORM */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-campo { display: flex; flex-direction: column; gap: 4px; }
+.form-campo.full { grid-column: 1 / -1; }
+.form-campo label { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--suave); }
+.form-campo input, .form-campo select, .form-campo textarea { padding: 8px 12px; border: 1px solid var(--gris-med); border-radius: 8px; font-size: 13px; font-family: inherit; background: var(--gris); outline: none; transition: border 0.2s; }
+.form-campo input:focus, .form-campo select:focus, .form-campo textarea:focus { border-color: var(--sol); background: white; }
+.form-campo textarea { resize: vertical; min-height: 70px; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--negro); color: white; padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 999; display: none; border-left: 4px solid var(--sol); }
+.toast.show { display: block; animation: slideIn 0.3s ease; }
+.toast.error { border-left-color: var(--rojo); }
+.toast.success { border-left-color: var(--verde); }
+@keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* REPORTE */
+.reporte-header { background: white; border-radius: 14px; padding: 20px 24px; margin-bottom: 16px; border: 1px solid var(--gris-med); display: flex; justify-content: space-between; align-items: center; }
+.reporte-titulo { font-family: 'Playfair Display', serif; font-size: 22px; }
+.reporte-sub { font-size: 12px; color: var(--suave); margin-top: 2px; }
+.reporte-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.reporte-card { background: white; border-radius: 14px; padding: 20px; border: 1px solid var(--gris-med); }
+.reporte-card-titulo { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--suave); margin-bottom: 14px; }
+.reporte-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gris); }
+.reporte-item:last-child { border-bottom: none; }
+.reporte-item-nombre { font-size: 13px; }
+.reporte-item-valor { font-size: 13px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">SYNTRA</div>
+    <div class="header-title">Plataforma operativa</div>
+  </div>
+  <div class="header-right">
+    <span class="conn-status conn-loading" id="conn-status">● Conectando...</span>
+    <div class="header-date" id="fecha-actual"></div>
+    <button class="btn btn-secondary" onclick="mostrarVista('reporte', null)">📊 Reporte</button>
+    <button class="btn btn-primary" onclick="abrirNuevoProyecto()">+ Nuevo proyecto</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="mostrarVista('kanban', this)">🗂 Tablero</div>
+  <div class="tab" onclick="mostrarVista('tabla', this)">📋 Lista</div>
+  <div class="tab" onclick="mostrarVista('reporte', this)">📊 Reporte semanal</div>
+</div>
+
+<div class="contenido">
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="loading-spinner"></div></div>
+    <div class="stat-card"></div><div class="stat-card"></div>
+    <div class="stat-card"></div><div class="stat-card"></div>
+  </div>
+
+  <div class="vista active" id="vista-kanban">
+    <div class="loading"><div class="loading-spinner"></div>Cargando proyectos...</div>
+  </div>
+
+  <div class="vista" id="vista-tabla">
+    <div class="tabla-container">
+      <div class="tabla-header-row">
+        <div class="tabla-titulo">Todos los proyectos</div>
+        <div class="tabla-filtros">
+          <div class="filtro active" onclick="filtrarTabla('todos', this)">Todos</div>
+          <div class="filtro" onclick="filtrarTabla('activos', this)">Activos</div>
+          <div class="filtro" onclick="filtrarTabla('cerrados', this)">Cerrados</div>
+          <div class="filtro" onclick="filtrarTabla('cfe', this)">Con CFE</div>
+        </div>
+      </div>
+      <div id="tabla-body"><div class="loading"><div class="loading-spinner"></div></div></div>
+    </div>
+  </div>
+
+  <div class="vista" id="vista-reporte">
+    <div id="reporte-contenido"><div class="loading"><div class="loading-spinner"></div></div></div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="modal-overlay" id="modal-detalle">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-titulo" id="modal-nombre"></div>
+      <button class="modal-close" onclick="cerrarModal('modal-detalle')">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO PROYECTO -->
+<div class="modal-overlay" id="modal-nuevo">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-titulo">Nuevo Proyecto</div>
+      <button class="modal-close" onclick="cerrarModal('modal-nuevo')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-campo full"><label>Nombre del cliente *</label><input type="text" id="np-nombre" placeholder="Ej. Juan García"></div>
+        <div class="form-campo"><label>Teléfono</label><input type="text" id="np-telefono" placeholder="Ej. 442 123 4567"></div>
+        <div class="form-campo"><label>Email</label><input type="email" id="np-email" placeholder="cliente@email.com"></div>
+        <div class="form-campo"><label>Tipo de proyecto</label>
+          <select id="np-tipo">
+            <option value="baja-tension">Baja Tensión (Residencial/Comercial)</option>
+            <option value="media-tension">Media Tensión (Industrial)</option>
+          </select>
+        </div>
+        <div class="form-campo"><label>Vendedor</label>
+          <select id="np-vendedor">
+            <option value="Sergio">Sergio</option>
+            <option value="Nuevo Vendedor">Nuevo Vendedor</option>
+            <option value="Alejandro">Alejandro</option>
+          </select>
+        </div>
+        <div class="form-campo"><label>Monto total del proyecto</label><input type="number" id="np-monto" placeholder="0.00"></div>
+        <div class="form-campo"><label>Anticipo recibido</label><input type="number" id="np-anticipo" placeholder="0.00"></div>
+        <div class="form-campo"><label>Fecha estimada de instalación</label><input type="date" id="np-fecha"></div>
+        <div class="form-campo"><label>¿Requiere trámite CFE?</label>
+          <select id="np-cfe">
+            <option value="no">No aplica</option>
+            <option value="pendiente">Sí — Pendiente</option>
+            <option value="proceso">Sí — En proceso</option>
+          </select>
+        </div>
+        <div class="form-campo"><label>Servicios extras</label>
+          <select id="np-extras">
+            <option value="">Ninguno</option>
+            <option value="Cambio de nombre">Cambio de nombre</option>
+            <option value="Aumento de carga">Aumento de carga</option>
+            <option value="Cambio de nombre + Aumento de carga">Ambos</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="form-campo full"><label>Notas</label><textarea id="np-notas" placeholder="Observaciones del proyecto..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-nuevo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="agregarProyecto()">Crear proyecto</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://ypmkuroqjhgidqpjhvtj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwbWt1cm9xamhnaWRxcGpodnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTk2MTcsImV4cCI6MjA5NTU3NTYxN30.4yhzqtKRlWJNMbxUyXnTonIicdh8Ose1geHI7wBQlws';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const ETAPAS = [
+  { id: 1, nombre: 'Venta Cerrada' },
+  { id: 2, nombre: 'Compra de Materiales' },
+  { id: 3, nombre: 'Materiales Listos' },
+  { id: 4, nombre: 'Instalación Programada' },
+  { id: 5, nombre: 'En Instalación' },
+  { id: 6, nombre: 'Puesta en Marcha' },
+  { id: 7, nombre: 'Proyecto Cerrado' },
+];
+
+let proyectos = [];
+let filtroActual = 'todos';
+let vistaActual = 'kanban';
+
+function fmt(n) { return '$' + Number(n||0).toLocaleString('es-MX', {minimumFractionDigits:0, maximumFractionDigits:0}); }
+function pct(a, b) { return b > 0 ? Math.round((a/b)*100) : 0; }
+function getEtapaNombre(id) { return ETAPAS.find(e => e.id === id)?.nombre || ''; }
+function getEtapaBadge(id) { return `etapa-${id}`; }
+
+function cfeLabel(c) {
+  if (!c || c === 'no') return '<span class="badge-cfe cfe-na">N/A</span>';
+  if (c === 'pendiente') return '<span class="badge-cfe cfe-pendiente">Pendiente</span>';
+  if (c === 'proceso') return '<span class="badge-cfe cfe-proceso">En proceso</span>';
+  if (c === 'listo') return '<span class="badge-cfe cfe-listo">Completado</span>';
+  return '';
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+async function cargarProyectos() {
+  const { data, error } = await db.from('proyectos').select('*, clientes(nombre, telefono, email)').order('created_at', { ascending: false });
+  if (error) { showToast('Error al cargar proyectos', 'error'); return; }
+  proyectos = data || [];
+  renderTodo();
+}
+
+function renderStats() {
+  const activos = proyectos.filter(p => p.etapa < 7);
+  const totalMonto = proyectos.reduce((s, p) => s + (p.monto||0), 0);
+  const totalCobrado = proyectos.reduce((s, p) => s + (p.cobrado||0), 0);
+  const pendiente = totalMonto - totalCobrado;
+  const cerrados = proyectos.filter(p => p.etapa === 7).length;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Proyectos activos</div><div class="stat-valor">${activos.length}</div><div class="stat-sub">de ${proyectos.length} totales</div></div>
+    <div class="stat-card stat-verde"><div class="stat-label">Facturación total</div><div class="stat-valor" style="font-size:18px">${fmt(totalMonto)}</div><div class="stat-sub">proyectos actuales</div></div>
+    <div class="stat-card stat-sol"><div class="stat-label">Total cobrado</div><div class="stat-valor" style="font-size:18px">${fmt(totalCobrado)}</div><div class="stat-sub">${pct(totalCobrado, totalMonto)}% del total</div></div>
+    <div class="stat-card stat-rojo"><div class="stat-label">Por cobrar</div><div class="stat-valor" style="font-size:18px">${fmt(pendiente)}</div><div class="stat-sub">pendiente</div></div>
+    <div class="stat-card stat-azul"><div class="stat-label">Cerrados</div><div class="stat-valor">${cerrados}</div><div class="stat-sub">completados</div></div>
+  `;
+}
+
+function renderKanban() {
+  const board = document.getElementById('vista-kanban');
+  board.innerHTML = '<div class="kanban" id="kanban-board"></div>';
+  const kb = document.getElementById('kanban-board');
+  ETAPAS.forEach(etapa => {
+    const items = proyectos.filter(p => p.etapa === etapa.id);
+    const col = document.createElement('div');
+    col.className = 'columna';
+    col.innerHTML = `
+      <div class="columna-header">
+        <div class="columna-nombre" style="font-size:10px">${etapa.nombre}</div>
+        <div class="columna-count">${items.length}</div>
+      </div>
+      <div class="columna-items">
+        ${items.length === 0 ? '<div class="empty-col">Sin proyectos</div>' :
+          items.map(p => {
+            const nombre = p.clientes?.nombre || 'Sin nombre';
+            const pendiente = (p.monto||0) - (p.cobrado||0);
+            return `<div class="tarjeta ${p.tipo||'baja-tension'}" onclick="verDetalle(${p.id})">
+              <div class="tarjeta-nombre">${nombre}</div>
+              <div class="tarjeta-tipo ${p.tipo === 'media-tension' ? 'tipo-mt' : 'tipo-bt'}">${p.tipo === 'media-tension' ? 'Media tensión' : 'Baja tensión'}</div>
+              <div class="tarjeta-monto">${fmt(p.monto)}</div>
+              ${pendiente > 0 ? `<div class="tarjeta-pendiente">Por cobrar: ${fmt(pendiente)}</div>` : '<div style="font-size:11px;color:var(--verde)">✓ Cobro completo</div>'}
+              ${p.fecha_instalacion ? `<div class="tarjeta-fecha">📅 ${p.fecha_instalacion}</div>` : ''}
+              <div class="tarjeta-tags">
+                ${p.cfe && p.cfe !== 'no' ? '<span class="tag tag-cfe">CFE</span>' : ''}
+                ${p.extras ? '<span class="tag tag-extra">Extra</span>' : ''}
+              </div>
+            </div>`;
+          }).join('')}
+      </div>`;
+    kb.appendChild(col);
+  });
+}
+
+function renderTabla() {
+  let datos = [...proyectos];
+  if (filtroActual === 'activos') datos = datos.filter(p => p.etapa < 7);
+  if (filtroActual === 'cerrados') datos = datos.filter(p => p.etapa === 7);
+  if (filtroActual === 'cfe') datos = datos.filter(p => p.cfe && p.cfe !== 'no');
+  document.getElementById('tabla-body').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Cliente</th><th>Tipo</th><th>Etapa</th>
+        <th>Monto</th><th>Cobrado</th><th>Por cobrar</th>
+        <th>CFE</th><th>Vendedor</th><th>Fecha inst.</th>
+      </tr></thead>
+      <tbody>
+        ${datos.length === 0 ? '<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--suave)">Sin proyectos</td></tr>' :
+          datos.map(p => `<tr onclick="verDetalle(${p.id})">
+            <td class="td-nombre">${p.clientes?.nombre || '—'}</td>
+            <td style="font-size:10px;font-weight:600;text-transform:uppercase;color:${p.tipo==='media-tension'?'var(--verde)':'var(--sol)'}">${p.tipo==='media-tension'?'MT':'BT'}</td>
+            <td><span class="badge-etapa ${getEtapaBadge(p.etapa)}">${getEtapaNombre(p.etapa)}</span></td>
+            <td class="td-monto">${fmt(p.monto)}</td>
+            <td>${fmt(p.cobrado)}</td>
+            <td class="td-pendiente">${fmt((p.monto||0)-(p.cobrado||0))}</td>
+            <td>${cfeLabel(p.cfe)}</td>
+            <td>${p.vendedor||'—'}</td>
+            <td>${p.fecha_instalacion||'—'}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderReporte() {
+  const hoy = new Date();
+  const activos = proyectos.filter(p => p.etapa < 7);
+  const porCerrar = proyectos.filter(p => p.etapa >= 5 && p.etapa < 7);
+  const conCFE = proyectos.filter(p => p.cfe && p.cfe !== 'no' && p.etapa < 7);
+  const totalPendiente = proyectos.reduce((s,p) => s + ((p.monto||0)-(p.cobrado||0)), 0);
+  document.getElementById('reporte-contenido').innerHTML = `
+    <div class="reporte-header">
+      <div><div class="reporte-titulo">Reporte Semanal</div><div class="reporte-sub">${hoy.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div>
+      <button class="btn btn-primary" onclick="window.print()">🖨 Imprimir</button>
+    </div>
+    <div class="stats-row" style="margin-bottom:16px">
+      <div class="stat-card"><div class="stat-label">Activos</div><div class="stat-valor">${activos.length}</div></div>
+      <div class="stat-card stat-sol"><div class="stat-label">Por cerrar</div><div class="stat-valor">${porCerrar.length}</div></div>
+      <div class="stat-card stat-rojo"><div class="stat-label">Por cobrar</div><div class="stat-valor" style="font-size:16px">${fmt(totalPendiente)}</div></div>
+      <div class="stat-card stat-azul"><div class="stat-label">Trámites CFE</div><div class="stat-valor">${conCFE.length}</div></div>
+      <div class="stat-card stat-verde"><div class="stat-label">Cerrados</div><div class="stat-valor">${proyectos.filter(p=>p.etapa===7).length}</div></div>
+    </div>
+    <div class="reporte-grid">
+      <div class="reporte-card">
+        <div class="reporte-card-titulo">Proyectos activos</div>
+        ${activos.length === 0 ? '<div style="color:var(--suave);font-size:13px">Sin proyectos activos</div>' :
+          activos.map(p=>`<div class="reporte-item"><div class="reporte-item-nombre">${p.clientes?.nombre||'—'}</div><span class="badge-etapa ${getEtapaBadge(p.etapa)}">${getEtapaNombre(p.etapa)}</span></div>`).join('')}
+      </div>
+      <div class="reporte-card">
+        <div class="reporte-card-titulo">Cobros pendientes</div>
+        ${proyectos.filter(p=>(p.monto||0)-(p.cobrado||0)>0).length === 0 ? '<div style="color:var(--suave);font-size:13px">Sin cobros pendientes</div>' :
+          proyectos.filter(p=>(p.monto||0)-(p.cobrado||0)>0).map(p=>`<div class="reporte-item"><div class="reporte-item-nombre">${p.clientes?.nombre||'—'}</div><div class="reporte-item-valor" style="color:var(--rojo)">${fmt((p.monto||0)-(p.cobrado||0))}</div></div>`).join('')}
+      </div>
+      <div class="reporte-card">
+        <div class="reporte-card-titulo">Trámites CFE activos</div>
+        ${conCFE.length===0?'<div style="color:var(--suave);font-size:13px">Sin trámites activos</div>':
+          conCFE.map(p=>`<div class="reporte-item"><div class="reporte-item-nombre">${p.clientes?.nombre||'—'}</div>${cfeLabel(p.cfe)}</div>`).join('')}
+      </div>
+      <div class="reporte-card">
+        <div class="reporte-card-titulo">Servicios extras activos</div>
+        ${proyectos.filter(p=>p.extras&&p.etapa<7).length===0?'<div style="color:var(--suave);font-size:13px">Sin servicios extras</div>':
+          proyectos.filter(p=>p.extras&&p.etapa<7).map(p=>`<div class="reporte-item"><div class="reporte-item-nombre">${p.clientes?.nombre||'—'}</div><div style="font-size:11px;font-weight:600;color:var(--morado)">${p.extras}</div></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+async function verDetalle(id) {
+  const p = proyectos.find(x => x.id === id);
+  if (!p) return;
+  const nombre = p.clientes?.nombre || 'Sin nombre';
+  document.getElementById('modal-nombre').textContent = nombre;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-section">
+      <div class="modal-section-titulo">Información general</div>
+      <div class="modal-grid">
+        <div class="modal-campo"><div class="modal-campo-label">Tipo</div><div class="modal-campo-valor">${p.tipo==='baja-tension'?'Baja Tensión':'Media Tensión'}</div></div>
+        <div class="modal-campo"><div class="modal-campo-label">Vendedor</div><div class="modal-campo-valor">${p.vendedor||'—'}</div></div>
+        <div class="modal-campo"><div class="modal-campo-label">Monto total</div><div class="modal-campo-valor" style="color:var(--verde)">${fmt(p.monto)}</div></div>
+        <div class="modal-campo"><div class="modal-campo-label">Cobrado</div><div class="modal-campo-valor">${fmt(p.cobrado)} (${pct(p.cobrado,p.monto)}%)</div></div>
+        <div class="modal-campo"><div class="modal-campo-label">Por cobrar</div><div class="modal-campo-valor" style="color:var(--rojo)">${fmt((p.monto||0)-(p.cobrado||0))}</div></div>
+        <div class="modal-campo"><div class="modal-campo-label">Fecha instalación</div><div class="modal-campo-valor">${p.fecha_instalacion||'Por definir'}</div></div>
+        <div class="modal-campo"><div class="modal-campo-label">Trámite CFE</div><div class="modal-campo-valor">${p.cfe==='no'||!p.cfe?'No aplica':p.cfe==='pendiente'?'Pendiente':p.cfe==='proceso'?'En proceso':'Completado'}</div></div>
+        <div class="modal-campo"><div class="modal-campo-label">Servicios extras</div><div class="modal-campo-valor">${p.extras||'Ninguno'}</div></div>
+      </div>
+      ${p.notas?`<div style="margin-top:12px;background:var(--gris);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--suave)">${p.notas}</div>`:''}
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-titulo">Avance del proyecto</div>
+      <div class="etapas-lista">
+        ${ETAPAS.map(e=>`<div class="etapa-item ${e.id<p.etapa?'completada':e.id===p.etapa?'activa':''}">
+          <div class="etapa-check">${e.id<p.etapa?'✓':e.id===p.etapa?'●':''}</div>
+          <div class="etapa-nombre-modal">${e.nombre}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="btn btn-danger" onclick="eliminarProyecto(${id})">Eliminar</button>
+    <div style="flex:1"></div>
+    <button class="btn btn-secondary" onclick="abrirEdicion(${id})">✏️ Editar</button>
+    ${p.etapa>1?`<button class="btn btn-secondary" onclick="cambiarEtapa(${id},${p.etapa-1})">← Anterior</button>`:''}
+    ${p.etapa<7?`<button class="btn btn-primary" onclick="cambiarEtapa(${id},${p.etapa+1})">Avanzar → ${getEtapaNombre(p.etapa+1)}</button>`:'<span style="color:var(--verde);font-weight:600;font-size:13px;padding:8px">✓ Completado</span>'}`;
+  document.getElementById('modal-detalle').classList.add('open');
+}
+
+function abrirEdicion(id) {
+  const p = proyectos.find(x => x.id === id);
+  if (!p) return;
+  const nombre = p.clientes?.nombre || 'Sin nombre';
+  document.getElementById('modal-nombre').textContent = `✏️ Editar — ${nombre}`;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-section">
+      <div class="modal-section-titulo">Editar datos del proyecto</div>
+      <div class="form-grid">
+        <div class="form-campo">
+          <label>Monto total ($)</label>
+          <input type="number" id="ed-monto" value="${p.monto||0}">
+        </div>
+        <div class="form-campo">
+          <label>Total cobrado ($)</label>
+          <input type="number" id="ed-cobrado" value="${p.cobrado||0}">
+          <div style="font-size:11px;color:var(--suave);margin-top:3px">Actualiza cuando recibas un pago</div>
+        </div>
+        <div class="form-campo">
+          <label>Tipo de proyecto</label>
+          <select id="ed-tipo">
+            <option value="baja-tension" ${p.tipo==='baja-tension'?'selected':''}>Baja Tensión</option>
+            <option value="media-tension" ${p.tipo==='media-tension'?'selected':''}>Media Tensión</option>
+          </select>
+        </div>
+        <div class="form-campo">
+          <label>Vendedor</label>
+          <select id="ed-vendedor">
+            <option ${p.vendedor==='Sergio'?'selected':''}>Sergio</option>
+            <option ${p.vendedor==='Nuevo Vendedor'?'selected':''}>Nuevo Vendedor</option>
+            <option ${p.vendedor==='Alejandro'?'selected':''}>Alejandro</option>
+          </select>
+        </div>
+        <div class="form-campo">
+          <label>Fecha instalación</label>
+          <input type="date" id="ed-fecha" value="${p.fecha_instalacion||''}">
+        </div>
+        <div class="form-campo">
+          <label>Trámite CFE</label>
+          <select id="ed-cfe">
+            <option value="no" ${p.cfe==='no'||!p.cfe?'selected':''}>No aplica</option>
+            <option value="pendiente" ${p.cfe==='pendiente'?'selected':''}>Pendiente</option>
+            <option value="proceso" ${p.cfe==='proceso'?'selected':''}>En proceso</option>
+            <option value="listo" ${p.cfe==='listo'?'selected':''}>Completado</option>
+          </select>
+        </div>
+        <div class="form-campo full">
+          <label>Servicios extras</label>
+          <select id="ed-extras">
+            <option value="" ${!p.extras?'selected':''}>Ninguno</option>
+            <option value="Cambio de nombre" ${p.extras==='Cambio de nombre'?'selected':''}>Cambio de nombre</option>
+            <option value="Aumento de carga" ${p.extras==='Aumento de carga'?'selected':''}>Aumento de carga</option>
+            <option value="Cambio de nombre + Aumento de carga" ${p.extras==='Cambio de nombre + Aumento de carga'?'selected':''}>Ambos</option>
+          </select>
+        </div>
+        <div class="form-campo full">
+          <label>Notas</label>
+          <textarea id="ed-notas" style="resize:vertical;min-height:70px">${p.notas||''}</textarea>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="btn btn-secondary" onclick="verDetalle(${id})">← Cancelar</button>
+    <div style="flex:1"></div>
+    <button class="btn btn-primary" onclick="guardarEdicion(${id})">💾 Guardar cambios</button>`;
+}
+
+async function guardarEdicion(id) {
+  const updates = {
+    monto: parseFloat(document.getElementById('ed-monto').value)||0,
+    cobrado: parseFloat(document.getElementById('ed-cobrado').value)||0,
+    tipo: document.getElementById('ed-tipo').value,
+    vendedor: document.getElementById('ed-vendedor').value,
+    fecha_instalacion: document.getElementById('ed-fecha').value || null,
+    cfe: document.getElementById('ed-cfe').value,
+    extras: document.getElementById('ed-extras').value,
+    notas: document.getElementById('ed-notas').value,
+  };
+  const { error } = await db.from('proyectos').update(updates).eq('id', id);
+  if (error) { showToast('Error al guardar', 'error'); return; }
+  showToast('Proyecto actualizado ✓', 'success');
+  cerrarModal('modal-detalle');
+  await cargarProyectos();
+}
+
+async function cambiarEtapa(id, nuevaEtapa) {
+  const { error } = await db.from('proyectos').update({ etapa: nuevaEtapa }).eq('id', id);
+  if (error) { showToast('Error al actualizar', 'error'); return; }
+  showToast('Etapa actualizada ✓', 'success');
+  cerrarModal('modal-detalle');
+  await cargarProyectos();
+}
+
+async function eliminarProyecto(id) {
+  if (!confirm('¿Seguro que quieres eliminar este proyecto?')) return;
+  const { error } = await db.from('proyectos').delete().eq('id', id);
+  if (error) { showToast('Error al eliminar', 'error'); return; }
+  showToast('Proyecto eliminado', '');
+  cerrarModal('modal-detalle');
+  await cargarProyectos();
+}
+
+async function agregarProyecto() {
+  const nombre = document.getElementById('np-nombre').value.trim();
+  if (!nombre) { showToast('Ingresa el nombre del cliente', 'error'); return; }
+  const monto = parseFloat(document.getElementById('np-monto').value)||0;
+  const anticipo = parseFloat(document.getElementById('np-anticipo').value)||0;
+
+  // Crear cliente primero
+  const { data: cliente, error: errCliente } = await db.from('clientes').insert({
+    nombre,
+    telefono: document.getElementById('np-telefono').value,
+    email: document.getElementById('np-email').value,
+    vendedor: document.getElementById('np-vendedor').value,
+    origen: 'manual',
+    estado: 'proyecto'
+  }).select().single();
+
+  if (errCliente) { showToast('Error al crear cliente', 'error'); return; }
+
+  // Crear proyecto
+  const { error: errProyecto } = await db.from('proyectos').insert({
+    cliente_id: cliente.id,
+    tipo: document.getElementById('np-tipo').value,
+    etapa: 1,
+    monto,
+    cobrado: anticipo,
+    vendedor: document.getElementById('np-vendedor').value,
+    fecha_instalacion: document.getElementById('np-fecha').value || null,
+    cfe: document.getElementById('np-cfe').value,
+    extras: document.getElementById('np-extras').value,
+    notas: document.getElementById('np-notas').value
+  });
+
+  if (errProyecto) { showToast('Error al crear proyecto', 'error'); return; }
+
+  showToast('Proyecto creado ✓', 'success');
+  cerrarModal('modal-nuevo');
+  ['np-nombre','np-telefono','np-email','np-monto','np-anticipo','np-fecha','np-notas'].forEach(id => document.getElementById(id).value='');
+  await cargarProyectos();
+}
+
+function filtrarTabla(filtro, el) {
+  filtroActual = filtro;
+  document.querySelectorAll('.filtro').forEach(f => f.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderTabla();
+}
+
+function mostrarVista(vista, tab) {
+  vistaActual = vista;
+  document.querySelectorAll('.vista').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('vista-'+vista).classList.add('active');
+  if(tab) tab.classList.add('active');
+  if(vista==='reporte') renderReporte();
+}
+
+function abrirNuevoProyecto() { document.getElementById('modal-nuevo').classList.add('open'); }
+function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function renderTodo() {
+  renderStats();
+  renderKanban();
+  renderTabla();
+  if(vistaActual==='reporte') renderReporte();
+}
+
+// Init
+document.getElementById('fecha-actual').textContent = new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});
+
+(async () => {
+  const statusEl = document.getElementById('conn-status');
+  try {
+    const { error } = await db.from('proyectos').select('count').limit(1);
+    if (error) throw error;
+    statusEl.textContent = '● Conectado';
+    statusEl.className = 'conn-status conn-ok';
+    await cargarProyectos();
+  } catch(e) {
+    statusEl.textContent = '● Sin conexión';
+    statusEl.className = 'conn-status conn-err';
+    showToast('Error de conexión con la base de datos', 'error');
+  }
+})();
+</script>
+</body>
+</html>

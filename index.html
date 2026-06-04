@@ -106,11 +106,9 @@ td { padding: 11px 14px; font-size: 12.5px; vertical-align: middle; }
 .badge-etapa { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
 .etapa-1 { background: #F0F0F0; color: #666; }
 .etapa-2 { background: var(--sol-claro); color: #8B5E00; }
-.etapa-3 { background: #FFF8E1; color: #7A5C00; }
-.etapa-4 { background: var(--azul-claro); color: var(--azul); }
-.etapa-5 { background: #E3F2FD; color: #1565C0; }
-.etapa-6 { background: var(--verde-claro); color: var(--verde); }
-.etapa-7 { background: #E8F5E9; color: #2E7D32; }
+.etapa-3 { background: var(--azul-claro); color: var(--azul); }
+.etapa-4 { background: var(--verde-claro); color: var(--verde); }
+.etapa-5 { background: #E8F5E9; color: #2E7D32; }
 
 /* MODAL */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; }
@@ -183,11 +181,13 @@ td { padding: 11px 14px; font-size: 12.5px; vertical-align: middle; }
 .cal-dia.otro-mes { background: var(--gris); opacity: 0.5; }
 .cal-dia-num { font-size: 12px; font-weight: 600; color: var(--suave); margin-bottom: 4px; }
 .cal-dia.hoy .cal-dia-num { color: var(--verde); font-weight: 700; }
-.cal-evento { background: var(--verde); color: white; border-radius: 5px; padding: 2px 6px; font-size: 10px; font-weight: 600; margin-bottom: 3px; cursor: pointer; line-height: 1.3; transition: opacity 0.15s; }
+.cal-evento { background: var(--azul); color: white; border-radius: 5px; padding: 2px 6px; font-size: 10px; font-weight: 600; margin-bottom: 3px; cursor: pointer; line-height: 1.3; transition: opacity 0.15s; }
 .cal-evento:hover { opacity: 0.85; }
-.cal-evento.etapa-4 { background: var(--azul); }
-.cal-evento.etapa-5 { background: var(--naranja); }
-.cal-evento.etapa-6 { background: var(--verde); }
+.cal-evento.etapa-1 { background: var(--suave); }
+.cal-evento.etapa-2 { background: var(--sol); }
+.cal-evento.etapa-3 { background: var(--verde); }
+.cal-evento.etapa-4 { background: var(--naranja); }
+.cal-evento.etapa-5 { background: #888; }
 
 /* FORMULARIO SERGIO */
 .form-sergio { max-width: 540px; }
@@ -272,9 +272,9 @@ td { padding: 11px 14px; font-size: 12.5px; vertical-align: middle; }
     </div>
     <div id="cal-contenido"></div>
     <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;border-radius:3px;background:var(--azul)"></div><span style="font-size:11px;color:var(--suave)">Programada</span></div>
-      <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;border-radius:3px;background:var(--naranja)"></div><span style="font-size:11px;color:var(--suave)">En instalación</span></div>
-      <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;border-radius:3px;background:var(--verde)"></div><span style="font-size:11px;color:var(--suave)">Puesta en marcha</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;border-radius:3px;background:var(--sol)"></div><span style="font-size:11px;color:var(--suave)">Preparación</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;border-radius:3px;background:var(--verde)"></div><span style="font-size:11px;color:var(--suave)">Instalación</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;border-radius:3px;background:var(--naranja)"></div><span style="font-size:11px;color:var(--suave)">Puesta en Marcha</span></div>
     </div>
   </div>
 
@@ -426,12 +426,10 @@ const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ETAPAS = [
   { id:1, nombre:'Venta Cerrada' },
-  { id:2, nombre:'Compra de Materiales' },
-  { id:3, nombre:'Materiales Listos' },
-  { id:4, nombre:'Instalación Programada' },
-  { id:5, nombre:'En Instalación' },
-  { id:6, nombre:'Puesta en Marcha' },
-  { id:7, nombre:'Proyecto Cerrado' },
+  { id:2, nombre:'Preparación' },
+  { id:3, nombre:'Instalación' },
+  { id:4, nombre:'Puesta en Marcha' },
+  { id:5, nombre:'Proyecto Cerrado' },
 ];
 
 let proyectos = [];
@@ -462,16 +460,31 @@ async function cargarProyectos() {
 
 // ── STATS ──
 function renderStats() {
-  const activos = proyectos.filter(p=>p.etapa<7);
+  const activos = proyectos.filter(p=>p.etapa<5);
   const totalMonto = proyectos.reduce((s,p)=>s+(p.monto||0),0);
   const totalCobrado = proyectos.reduce((s,p)=>s+(p.cobrado||0),0);
-  const pendiente = totalMonto - totalCobrado;
+
+  // Deuda por etapa
+  const deudaPreInstalacion = proyectos.filter(p=>p.etapa<=2).reduce((s,p)=>s+((p.monto||0)-(p.cobrado||0)),0);
+  const deudaInstalacion = proyectos.filter(p=>p.etapa===3).reduce((s,p)=>s+((p.monto||0)-(p.cobrado||0)),0);
+  const deudaPostInstalacion = proyectos.filter(p=>p.etapa===4).reduce((s,p)=>s+((p.monto||0)-(p.cobrado||0)),0);
+  const deudaCerrados = proyectos.filter(p=>p.etapa===5).reduce((s,p)=>s+((p.monto||0)-(p.cobrado||0)),0);
   const matPendiente = proyectos.filter(p=>p.etapa<=3&&(!p.mat_paneles_ok||!p.mat_inversor_ok||!p.mat_estructura_ok)).length;
+
   document.getElementById('stats-row').innerHTML = `
     <div class="stat-card"><div class="stat-label">Proyectos activos</div><div class="stat-valor">${activos.length}</div><div class="stat-sub">de ${proyectos.length} totales</div></div>
-    <div class="stat-card stat-verde"><div class="stat-label">Facturación total</div><div class="stat-valor" style="font-size:18px">${fmt(totalMonto)}</div></div>
-    <div class="stat-card stat-rojo"><div class="stat-label">Por cobrar</div><div class="stat-valor" style="font-size:18px">${fmt(pendiente)}</div></div>
-    <div class="stat-card stat-azul"><div class="stat-label">Cobrado</div><div class="stat-valor" style="font-size:18px">${fmt(totalCobrado)}</div><div class="stat-sub">${pct(totalCobrado,totalMonto)}%</div></div>
+    <div class="stat-card stat-verde"><div class="stat-label">Facturación total</div><div class="stat-valor" style="font-size:18px">${fmt(totalMonto)}</div><div class="stat-sub">${fmt(totalCobrado)} cobrado (${pct(totalCobrado,totalMonto)}%)</div></div>
+    <div class="stat-card stat-rojo" style="cursor:pointer" onclick="mostrarDeudaDetalle()" title="Ver desglose">
+      <div class="stat-label">Por cobrar — desglose ▾</div>
+      <div class="stat-valor" style="font-size:16px">${fmt(deudaPreInstalacion+deudaInstalacion+deudaPostInstalacion+deudaCerrados)}</div>
+      <div style="margin-top:6px;display:flex;flex-direction:column;gap:3px">
+        <div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--suave)">Planeación</span><span style="color:var(--suave)">${fmt(deudaPreInstalacion)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--sol)">Instalación</span><span style="color:var(--sol)">${fmt(deudaInstalacion)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:var(--rojo)">Post-instalación</span><span style="color:var(--rojo)">${fmt(deudaPostInstalacion)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;border-top:1px solid var(--rojo-claro);padding-top:3px"><span style="color:var(--rojo)">🔴 Proyecto cerrado</span><span style="color:var(--rojo)">${fmt(deudaCerrados)}</span></div>
+      </div>
+    </div>
+    <div class="stat-card stat-azul"><div class="stat-label">Cobrado total</div><div class="stat-valor" style="font-size:18px">${fmt(totalCobrado)}</div></div>
     <div class="stat-card ${matPendiente>0?'stat-sol':'stat-verde'}"><div class="stat-label">Mat. por comprar</div><div class="stat-valor">${matPendiente}</div><div class="stat-sub">proyectos con pendientes</div></div>
   `;
 }
@@ -495,15 +508,17 @@ function renderKanban() {
           items.map(p=>{
             const nombre = p.clientes?.nombre||'Sin nombre';
             const pendiente = (p.monto||0)-(p.cobrado||0);
+            const checklistOk = p.mat_paneles_ok&&p.mat_inversor_ok&&p.mat_estructura_ok&&p.paco_confirmado;
             const matFalta = p.etapa<=3&&(!p.mat_paneles_ok||!p.mat_inversor_ok||!p.mat_estructura_ok);
-            const sinAnticipo = p.etapa<=3&&!(p.anticipo_ok);
+            const sinPaco = p.etapa<=3&&!p.paco_confirmado;
             return `<div class="tarjeta ${p.tipo==='media-tension'?'media-tension':''}" onclick="verDetalle(${p.id})">
               <div class="tarjeta-nombre">${nombre}</div>
               <div class="tarjeta-tipo">${p.tipo==='media-tension'?'Media tensión':'Baja tensión'}</div>
               <div class="tarjeta-monto">${fmt(p.monto)}</div>
               ${pendiente>0?`<div class="tarjeta-pendiente">Por cobrar: ${fmt(pendiente)}</div>`:'<div style="font-size:11px;color:var(--verde)">✓ Cobro completo</div>'}
               ${matFalta?'<div class="tarjeta-alerta">⚠ Materiales pendientes</div>':''}
-              ${sinAnticipo&&p.etapa<=2?'<div class="tarjeta-alerta">⚠ Sin anticipo confirmado</div>':''}
+              ${sinPaco?'<div class="tarjeta-alerta">⚠ Paco por confirmar</div>':''}
+              ${p.etapa===2&&checklistOk?'<div style="font-size:10px;color:var(--verde);font-weight:600;margin-top:4px">✓ Listo para instalar</div>':''}
               <div class="tarjeta-tags">
                 ${p.cfe&&p.cfe!=='no'?'<span class="tag tag-cfe">CFE</span>':''}
                 ${p.extras?'<span class="tag tag-extra">Extra</span>':''}
@@ -514,6 +529,14 @@ function renderKanban() {
       </div>`;
     kb.appendChild(col);
   });
+}
+
+function mostrarDeudaDetalle() {
+  const deudaPreInstalacion = proyectos.filter(p=>p.etapa<=2).reduce((s,p)=>s+((p.monto||0)-(p.cobrado||0)),0);
+  const deudaInstalacion = proyectos.filter(p=>p.etapa===3).reduce((s,p)=>s+((p.monto||0)-(p.cobrado||0)),0);
+  const deudaPostInstalacion = proyectos.filter(p=>p.etapa===4).reduce((s,p)=>s+((p.monto||0)-(p.cobrado||0)),0);
+  const deudaCerrados = proyectos.filter(p=>p.etapa===5).reduce((s,p)=>s+((p.monto||0)-(p.cobrado||0)),0);
+  alert(`DESGLOSE POR COBRAR\n\n⚪ Planeación (etapas 1-2): ${fmt(deudaPreInstalacion)}\n🟡 Instalación (etapa 3): ${fmt(deudaInstalacion)}\n🔴 Post-instalación (etapa 4): ${fmt(deudaPostInstalacion)}\n🚨 Proyecto cerrado (etapa 5): ${fmt(deudaCerrados)}\n\nLa deuda más urgente es la de proyectos cerrados — obra terminada, trámite terminado y sin cobrar.`);
 }
 
 // ── TABLA ──
@@ -587,64 +610,115 @@ function cambiarMesCal(dir) {
 
 // ── MATERIALES ──
 function renderMateriales() {
-  const activos = proyectos.filter(p=>p.etapa>=1&&p.etapa<=5);
-  if (activos.length===0) {
-    document.getElementById('materiales-contenido').innerHTML = '<div style="text-align:center;padding:48px;color:var(--suave)">Sin proyectos activos</div>';
+  const enPreparacion = proyectos.filter(p=>p.etapa===2);
+
+  if (enPreparacion.length===0) {
+    document.getElementById('materiales-contenido').innerHTML = `
+      <div style="text-align:center;padding:48px;color:var(--suave)">
+        <div style="font-size:32px;margin-bottom:12px">📦</div>
+        <div style="font-weight:600;margin-bottom:6px">Sin materiales pendientes</div>
+        <div style="font-size:12px">Los materiales aparecen aquí cuando un proyecto entra a Preparación</div>
+      </div>`;
     return;
   }
 
-  const porComprar = activos.filter(p=>!p.mat_paneles_ok||!p.mat_inversor_ok||!p.mat_estructura_ok);
-  const listos = activos.filter(p=>p.mat_paneles_ok&&p.mat_inversor_ok&&p.mat_estructura_ok);
+  const porComprar = enPreparacion.filter(p=>!p.mat_paneles_ok||!p.mat_inversor_ok||!p.mat_estructura_ok);
+  const completos = enPreparacion.filter(p=>p.mat_paneles_ok&&p.mat_inversor_ok&&p.mat_estructura_ok);
+
+  // TOTALES CONSOLIDADOS
+  const totalPaneles = porComprar.filter(p=>!p.mat_paneles_ok).reduce((s,p)=>s+(p.paneles||0),0);
+  const totalEstructuras = porComprar.filter(p=>!p.mat_estructura_ok).reduce((s,p)=>s+(p.paneles||0),0);
+  const inversoresPendientes = porComprar.filter(p=>!p.mat_inversor_ok);
+  const invResumen = {};
+  inversoresPendientes.forEach(p=>{ const inv = p.inversor||'Growatt'; invResumen[inv] = (invResumen[inv]||0)+1; });
 
   let html = '';
 
   if (porComprar.length>0) {
-    html += `<div style="margin-bottom:24px">
-      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rojo);margin-bottom:12px">⚠ Pendientes de compra (${porComprar.length})</div>`;
-    porComprar.forEach(p => {
-      const nombre = p.clientes?.nombre||'Sin nombre';
-      html += `<div style="background:white;border-radius:12px;border:1px solid var(--gris-med);padding:16px;margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div>
-            <div style="font-weight:700;font-size:14px">${nombre}</div>
-            <div style="font-size:11px;color:var(--suave)">${getEtapaNombre(p.etapa)} · ${p.fecha_instalacion?'📅 '+p.fecha_instalacion:'Sin fecha'}</div>
+    html += `
+      <div style="background:var(--negro);border-radius:14px;padding:20px 24px;margin-bottom:20px;color:white">
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#5A7A65;margin-bottom:14px">📦 Resumen consolidado — orden de compra</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+          <div style="background:#122010;border-radius:10px;padding:14px;border:1px solid #1E3A28">
+            <div style="font-size:10px;color:#5A7A65;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Paneles JA Solar 645W</div>
+            <div style="font-family:'Playfair Display',serif;font-size:32px;color:var(--verde-lima);line-height:1">${totalPaneles}</div>
+            <div style="font-size:11px;color:#5A7A65;margin-top:4px">módulos · ${porComprar.filter(p=>!p.mat_paneles_ok).length} proyectos</div>
           </div>
-          <span class="badge-etapa etapa-${p.etapa}">${getEtapaNombre(p.etapa)}</span>
+          <div style="background:#122010;border-radius:10px;padding:14px;border:1px solid #1E3A28">
+            <div style="font-size:10px;color:#5A7A65;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Inversores Growatt</div>
+            <div style="font-family:'Playfair Display',serif;font-size:32px;color:var(--verde-lima);line-height:1">${inversoresPendientes.length}</div>
+            <div style="font-size:11px;color:#5A7A65;margin-top:4px">${Object.entries(invResumen).map(([k,v])=>v+"× "+k).join(", ")||"—"}</div>
+          </div>
+          <div style="background:#122010;border-radius:10px;padding:14px;border:1px solid #1E3A28">
+            <div style="font-size:10px;color:#5A7A65;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Estructuras ALUMINEX</div>
+            <div style="font-family:'Playfair Display',serif;font-size:32px;color:var(--verde-lima);line-height:1">${totalEstructuras}</div>
+            <div style="font-size:11px;color:#5A7A65;margin-top:4px">módulos · ${porComprar.filter(p=>!p.mat_estructura_ok).length} proyectos</div>
+          </div>
         </div>
-        <div class="mat-row ${p.mat_paneles_ok?'comprado':''}">
-          <div><div class="mat-label">☀ Paneles solares</div><div class="mat-detalle">JA Solar 645W N-Type${p.paneles?` · ${p.paneles} módulos`:''}</div></div>
-          <div class="mat-qty">${p.paneles||'—'}</div>
-          <div class="mat-check ${p.mat_paneles_ok?'ok':''}" onclick="toggleMaterial(${p.id},'mat_paneles_ok',${!p.mat_paneles_ok})">${p.mat_paneles_ok?'✓':''}</div>
-        </div>
-        <div class="mat-row ${p.mat_inversor_ok?'comprado':''}">
-          <div><div class="mat-label">💹 Inversor</div><div class="mat-detalle">${p.inversor||'Growatt'}</div></div>
-          <div class="mat-qty">1</div>
-          <div class="mat-check ${p.mat_inversor_ok?'ok':''}" onclick="toggleMaterial(${p.id},'mat_inversor_ok',${!p.mat_inversor_ok})">${p.mat_inversor_ok?'✓':''}</div>
-        </div>
-        <div class="mat-row ${p.mat_estructura_ok?'comprado':''}">
-          <div><div class="mat-label">🔩 Estructura ALUMINEX</div><div class="mat-detalle">Para ${p.paneles||'—'} paneles</div></div>
-          <div class="mat-qty">${p.paneles||'—'}</div>
-          <div class="mat-check ${p.mat_estructura_ok?'ok':''}" onclick="toggleMaterial(${p.id},'mat_estructura_ok',${!p.mat_estructura_ok})">${p.mat_estructura_ok?'✓':''}</div>
-        </div>
-        ${p.mat_notas?`<div style="background:var(--gris);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--suave);margin-top:8px">📝 ${p.mat_notas}</div>`:''}
       </div>`;
-    });
-    html += '</div>';
   }
 
-  if (listos.length>0) {
-    html += `<div>
-      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--verde);margin-bottom:12px">✓ Materiales completos (${listos.length})</div>`;
-    listos.forEach(p => {
-      html += `<div style="background:var(--verde-claro);border-radius:12px;border:1px solid var(--verde);padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div style="font-weight:700">${p.clientes?.nombre||'Sin nombre'}</div>
-          <div style="font-size:11px;color:var(--verde)">${p.paneles||'—'} paneles · ${p.inversor||'—'}</div>
-        </div>
-        <span style="font-size:12px;color:var(--verde);font-weight:600">✓ Listo</span>
-      </div>`;
+  if (porComprar.length>0) {
+    html += `<div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rojo);margin-bottom:12px">⚠ Por comprar (${porComprar.length} proyectos)</div>`;
+    porComprar.forEach(p=>{
+      const nombre = p.clientes?.nombre||'Sin nombre';
+      html += `
+        <div style="background:white;border-radius:12px;border:1px solid var(--gris-med);padding:16px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div>
+              <div style="font-weight:700;font-size:14px">${nombre}</div>
+              <div style="font-size:11px;color:var(--suave)">${p.fecha_instalacion?"📅 "+p.fecha_instalacion:"Sin fecha"}</div>
+            </div>
+            <button class="btn btn-secondary" style="font-size:11px" onclick="verDetalle(${p.id})">Ver proyecto</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;background:${p.mat_paneles_ok?"var(--verde-claro)":"var(--rojo-claro)"};border:1px solid ${p.mat_paneles_ok?"var(--verde)":"var(--rojo)"}">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:14px">${p.mat_paneles_ok?"✅":"⬜"}</span>
+                <div>
+                  <div style="font-size:12px;font-weight:600;color:${p.mat_paneles_ok?"var(--verde)":"var(--rojo)"}">Paneles JA Solar 645W</div>
+                  <div style="font-size:11px;color:var(--suave)">${p.paneles||"—"} módulos</div>
+                </div>
+              </div>
+              ${!p.mat_paneles_ok?`<button class="btn btn-primary" style="font-size:11px;padding:5px 10px" onclick="toggleMaterial(${p.id},'mat_paneles_ok',true)">✓ Marcar</button>`:""}
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;background:${p.mat_inversor_ok?"var(--verde-claro)":"var(--rojo-claro)"};border:1px solid ${p.mat_inversor_ok?"var(--verde)":"var(--rojo)"}">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:14px">${p.mat_inversor_ok?"✅":"⬜"}</span>
+                <div>
+                  <div style="font-size:12px;font-weight:600;color:${p.mat_inversor_ok?"var(--verde)":"var(--rojo)"}">Inversor ${p.inversor||"Growatt"}</div>
+                  <div style="font-size:11px;color:var(--suave)">1 unidad</div>
+                </div>
+              </div>
+              ${!p.mat_inversor_ok?`<button class="btn btn-primary" style="font-size:11px;padding:5px 10px" onclick="toggleMaterial(${p.id},'mat_inversor_ok',true)">✓ Marcar</button>`:""}
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;background:${p.mat_estructura_ok?"var(--verde-claro)":"var(--rojo-claro)"};border:1px solid ${p.mat_estructura_ok?"var(--verde)":"var(--rojo)"}">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:14px">${p.mat_estructura_ok?"✅":"⬜"}</span>
+                <div>
+                  <div style="font-size:12px;font-weight:600;color:${p.mat_estructura_ok?"var(--verde)":"var(--rojo)"}">Estructura ALUMINEX</div>
+                  <div style="font-size:11px;color:var(--suave)">${p.paneles||"—"} módulos</div>
+                </div>
+              </div>
+              ${!p.mat_estructura_ok?`<button class="btn btn-primary" style="font-size:11px;padding:5px 10px" onclick="toggleMaterial(${p.id},'mat_estructura_ok',true)">✓ Marcar</button>`:""}
+            </div>
+          </div>
+        </div>`;
     });
-    html += '</div>';
+  }
+
+  if (completos.length>0) {
+    html += `<div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--verde);margin-top:20px;margin-bottom:12px">✓ Material completo (${completos.length} proyectos)</div>`;
+    completos.forEach(p=>{
+      html += `
+        <div style="background:var(--verde-claro);border-radius:12px;border:1px solid var(--verde);padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:700">${p.clientes?.nombre||"Sin nombre"}</div>
+            <div style="font-size:11px;color:var(--verde)">${p.paneles||"—"} paneles · ${p.inversor||"—"} · Estructura ✓</div>
+          </div>
+          <span style="font-size:20px">✅</span>
+        </div>`;
+    });
   }
 
   document.getElementById('materiales-contenido').innerHTML = html;
@@ -652,18 +726,33 @@ function renderMateriales() {
 
 async function toggleMaterial(id, campo, valor) {
   const { error } = await db.from('proyectos').update({[campo]: valor}).eq('id', id);
-  if (error) { showToast('Error al actualizar','error'); return; }
-  showToast(valor?'✓ Marcado como comprado':'Desmarcado','success');
+  if (error) { showToast('Error','error'); return; }
+  showToast('✓ Marcado','success');
   await cargarProyectos();
   renderMateriales();
 }
 
 // ── REPORTE ──
 function renderReporte() {
-  const activos = proyectos.filter(p=>p.etapa<7);
+  const activos = proyectos.filter(p=>p.etapa<5);
   const pendienteCobro = proyectos.filter(p=>(p.monto||0)-(p.cobrado||0)>0);
-  const conCFE = proyectos.filter(p=>p.cfe&&p.cfe!=='no'&&p.etapa<7);
+  const conCFE = proyectos.filter(p=>p.cfe&&p.cfe!=='no'&&p.etapa<5);
   const totalPendiente = proyectos.reduce((s,p)=>s+((p.monto||0)-(p.cobrado||0)),0);
+
+  // Deuda por etapa
+  const deudaPlaneacion = proyectos.filter(p=>p.etapa<=2).reduce((s,p)=>s+((p.monto||0)-(p.cobrado||0)),0);
+  const deudaInstalacion = proyectos.filter(p=>p.etapa===3).reduce((s,p)=>s+((p.monto||0)-(p.cobrado||0)),0);
+  const deudaPostInstalacion = proyectos.filter(p=>p.etapa===4).reduce((s,p)=>s+((p.monto||0)-(p.cobrado||0)),0);
+  const deudaCerrados = proyectos.filter(p=>p.etapa===5).reduce((s,p)=>s+((p.monto||0)-(p.cobrado||0)),0);
+
+  // Proyectos activos ordenados por etapa (más avanzados primero)
+  const activosOrdenados = [...activos].sort((a,b) => b.etapa - a.etapa);
+
+  // Trámites con detalle de tipo
+  const tramiteInterconexion = conCFE.filter(p=>!p.extras||(!p.extras.includes('Aumento')));
+  const tramiteAumento = conCFE.filter(p=>p.extras&&p.extras.includes('Aumento'));
+  const tramiteNombre = conCFE.filter(p=>p.extras&&p.extras.includes('Cambio de nombre')&&!p.extras.includes('Aumento'));
+
   document.getElementById('reporte-contenido').innerHTML = `
     <div class="reporte-header">
       <div><div class="reporte-titulo">Reporte Semanal</div><div class="reporte-sub">${new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div>
@@ -673,25 +762,100 @@ function renderReporte() {
       <div class="stat-card"><div class="stat-label">Activos</div><div class="stat-valor">${activos.length}</div></div>
       <div class="stat-card stat-rojo"><div class="stat-label">Por cobrar total</div><div class="stat-valor" style="font-size:16px">${fmt(totalPendiente)}</div></div>
       <div class="stat-card stat-azul"><div class="stat-label">Trámites CFE</div><div class="stat-valor">${conCFE.length}</div></div>
-      <div class="stat-card stat-verde"><div class="stat-label">Cerrados</div><div class="stat-valor">${proyectos.filter(p=>p.etapa===7).length}</div></div>
-      <div class="stat-card"><div class="stat-label">Con extras</div><div class="stat-valor">${proyectos.filter(p=>p.extras&&p.etapa<7).length}</div></div>
+      <div class="stat-card stat-verde"><div class="stat-label">Cerrados</div><div class="stat-valor">${proyectos.filter(p=>p.etapa===5).length}</div></div>
+      <div class="stat-card"><div class="stat-label">Con extras</div><div class="stat-valor">${proyectos.filter(p=>p.extras&&p.etapa<5).length}</div></div>
     </div>
     <div class="reporte-grid">
-      <div class="reporte-card"><div class="reporte-card-titulo">Proyectos activos</div>
-        ${activos.length===0?'<div style="color:var(--suave)">Sin proyectos</div>':
-          activos.map(p=>`<div class="reporte-item"><div>${p.clientes?.nombre||'—'}</div><span class="badge-etapa etapa-${p.etapa}">${getEtapaNombre(p.etapa)}</span></div>`).join('')}
+
+      <!-- PROYECTOS ACTIVOS — ordenados por etapa -->
+      <div class="reporte-card">
+        <div class="reporte-card-titulo">Proyectos activos</div>
+        ${activosOrdenados.length===0?'<div style="color:var(--suave)">Sin proyectos</div>':
+          activosOrdenados.map(p=>`
+            <div class="reporte-item">
+              <div style="font-size:13px">${p.clientes?.nombre||'—'}</div>
+              <span class="badge-etapa etapa-${p.etapa}">${getEtapaNombre(p.etapa)}</span>
+            </div>`).join('')}
       </div>
-      <div class="reporte-card"><div class="reporte-card-titulo">Cobros pendientes</div>
-        ${pendienteCobro.length===0?'<div style="color:var(--suave)">Sin pendientes</div>':
-          pendienteCobro.map(p=>`<div class="reporte-item"><div>${p.clientes?.nombre||'—'}</div><div style="color:var(--rojo);font-weight:600">${fmt((p.monto||0)-(p.cobrado||0))}</div></div>`).join('')}
+
+      <!-- COBROS PENDIENTES — divididos por etapa -->
+      <div class="reporte-card">
+        <div class="reporte-card-titulo">Cobros pendientes por etapa</div>
+        ${deudaCerrados>0?`
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);margin:8px 0 4px">🚨 Proyecto cerrado</div>
+          ${proyectos.filter(p=>p.etapa===5&&(p.monto||0)-(p.cobrado||0)>0).map(p=>`
+            <div class="reporte-item">
+              <div style="font-size:13px">${p.clientes?.nombre||'—'}</div>
+              <div style="color:var(--rojo);font-weight:700">${fmt((p.monto||0)-(p.cobrado||0))}</div>
+            </div>`).join('')}`:''}
+        ${deudaPostInstalacion>0?`
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);margin:8px 0 4px;${deudaCerrados>0?'border-top:1px solid var(--gris-med);padding-top:8px':''}">🔴 Puesta en marcha</div>
+          ${proyectos.filter(p=>p.etapa===4&&(p.monto||0)-(p.cobrado||0)>0).map(p=>`
+            <div class="reporte-item">
+              <div style="font-size:13px">${p.clientes?.nombre||'—'}</div>
+              <div style="color:var(--rojo);font-weight:600">${fmt((p.monto||0)-(p.cobrado||0))}</div>
+            </div>`).join('')}`:''}
+        ${deudaInstalacion>0?`
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--sol);margin:8px 0 4px;border-top:1px solid var(--gris-med);padding-top:8px">🟡 Instalación</div>
+          ${proyectos.filter(p=>p.etapa===3&&(p.monto||0)-(p.cobrado||0)>0).map(p=>`
+            <div class="reporte-item">
+              <div style="font-size:13px">${p.clientes?.nombre||'—'}</div>
+              <div style="color:var(--sol);font-weight:600">${fmt((p.monto||0)-(p.cobrado||0))}</div>
+            </div>`).join('')}`:''}
+        ${deudaPlaneacion>0?`
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--suave);margin:8px 0 4px;border-top:1px solid var(--gris-med);padding-top:8px">⚪ Planeación</div>
+          ${proyectos.filter(p=>p.etapa<=2&&(p.monto||0)-(p.cobrado||0)>0).map(p=>`
+            <div class="reporte-item">
+              <div style="font-size:13px">${p.clientes?.nombre||'—'}</div>
+              <div style="color:var(--suave);font-weight:500">${fmt((p.monto||0)-(p.cobrado||0))}</div>
+            </div>`).join('')}`:''}
+        ${pendienteCobro.length===0?'<div style="color:var(--suave)">Sin cobros pendientes ✓</div>':''}
       </div>
-      <div class="reporte-card"><div class="reporte-card-titulo">Trámites CFE activos</div>
-        ${conCFE.length===0?'<div style="color:var(--suave)">Sin trámites</div>':
-          conCFE.map(p=>`<div class="reporte-item"><div>${p.clientes?.nombre||'—'}</div><span style="font-size:11px;font-weight:600;color:var(--azul)">${p.cfe}</span></div>`).join('')}
+
+      <!-- TRÁMITES CFE — con detalle de tipo -->
+      <div class="reporte-card">
+        <div class="reporte-card-titulo">Trámites CFE activos</div>
+        ${conCFE.length===0?'<div style="color:var(--suave)">Sin trámites activos</div>':`
+          ${tramiteAumento.length>0?`
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--naranja);margin-bottom:4px">⚡ Aumento de carga (paso previo)</div>
+            ${tramiteAumento.map(p=>`
+              <div class="reporte-item">
+                <div style="font-size:13px">${p.clientes?.nombre||'—'}</div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+                  <span style="font-size:10px;font-weight:600;color:var(--naranja);background:var(--naranja-claro);padding:2px 6px;border-radius:4px">Aumento</span>
+                  <span style="font-size:10px;color:var(--suave)">${p.cfe}</span>
+                </div>
+              </div>`).join('')}`:''}
+          ${tramiteNombre.length>0?`
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--morado);margin:${tramiteAumento.length>0?'8px':'0'} 0 4px;${tramiteAumento.length>0?'border-top:1px solid var(--gris-med);padding-top:8px':''}">📋 Cambio de nombre (paso previo)</div>
+            ${tramiteNombre.map(p=>`
+              <div class="reporte-item">
+                <div style="font-size:13px">${p.clientes?.nombre||'—'}</div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+                  <span style="font-size:10px;font-weight:600;color:var(--morado);background:var(--morado-claro);padding:2px 6px;border-radius:4px">C. Nombre</span>
+                  <span style="font-size:10px;color:var(--suave)">${p.cfe}</span>
+                </div>
+              </div>`).join('')}`:''}
+          ${tramiteInterconexion.length>0?`
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--azul);margin:${tramiteAumento.length>0||tramiteNombre.length>0?'8px':'0'} 0 4px;${tramiteAumento.length>0||tramiteNombre.length>0?'border-top:1px solid var(--gris-med);padding-top:8px':''}">🔌 Interconexión CFE</div>
+            ${tramiteInterconexion.map(p=>`
+              <div class="reporte-item">
+                <div style="font-size:13px">${p.clientes?.nombre||'—'}</div>
+                <span style="font-size:10px;font-weight:600;color:var(--azul);background:var(--azul-claro);padding:2px 6px;border-radius:4px">${p.cfe}</span>
+              </div>`).join('')}`:''}
+        `}
       </div>
-      <div class="reporte-card"><div class="reporte-card-titulo">Próximas instalaciones</div>
-        ${proyectos.filter(p=>p.fecha_instalacion&&p.etapa<7).length===0?'<div style="color:var(--suave)">Sin fechas</div>':
-          proyectos.filter(p=>p.fecha_instalacion&&p.etapa<7).sort((a,b)=>new Date(a.fecha_instalacion)-new Date(b.fecha_instalacion)).map(p=>`<div class="reporte-item"><div>${p.clientes?.nombre||'—'}</div><div style="font-size:11px;color:var(--suave)">${p.fecha_instalacion}</div></div>`).join('')}
+
+      <!-- PRÓXIMAS INSTALACIONES -->
+      <div class="reporte-card">
+        <div class="reporte-card-titulo">Próximas instalaciones</div>
+        ${proyectos.filter(p=>p.fecha_instalacion&&p.etapa<5).length===0?'<div style="color:var(--suave)">Sin fechas programadas</div>':
+          proyectos.filter(p=>p.fecha_instalacion&&p.etapa<5)
+            .sort((a,b)=>new Date(a.fecha_instalacion)-new Date(b.fecha_instalacion))
+            .map(p=>`<div class="reporte-item">
+              <div style="font-size:13px">${p.clientes?.nombre||'—'}</div>
+              <div style="font-size:11px;color:var(--suave)">${p.fecha_instalacion}</div>
+            </div>`).join('')}
       </div>
     </div>`;
 }
@@ -703,115 +867,87 @@ async function verDetalle(id) {
   const nombre = p.clientes?.nombre||'Sin nombre';
   const pendiente = (p.monto||0)-(p.cobrado||0);
   document.getElementById('modal-nombre').textContent = nombre;
-
   let bodyHtml = '';
 
-  // ETAPA 1-3: PLANEACIÓN — mostrar checklist pre-instalación
-  if (p.etapa<=3) {
+  // ETAPA 1-2: VENTA / PREPARACIÓN
+  if (p.etapa<=2) {
+    const checklistOk = p.mat_paneles_ok&&p.mat_inversor_ok&&p.mat_estructura_ok&&p.paco_confirmado;
     const alertas = [];
     if (!p.mat_paneles_ok||!p.mat_inversor_ok||!p.mat_estructura_ok) alertas.push('Materiales incompletos');
-    if (!p.paco_confirmado) alertas.push('Paco Márquez no confirmado');
-    if (!p.anticipo_ok) alertas.push('Anticipo no confirmado');
+    if (!p.paco_confirmado) alertas.push('Paco Márquez por confirmar');
     if (!p.fecha_instalacion) alertas.push('Sin fecha de instalación');
-
-    if (alertas.length>0) bodyHtml += `
-      <div class="alerta-panel">
-        <span style="font-size:18px">⚠</span>
-        <div class="alerta-panel-texto">Pendientes antes de instalar: ${alertas.join(' · ')}</div>
-      </div>`;
-
+    if (alertas.length>0) bodyHtml += `<div class="alerta-panel"><span style="font-size:18px">⚠</span><div class="alerta-panel-texto">${alertas.join(' · ')}</div></div>`;
+    if (checklistOk) bodyHtml += `<div style="background:var(--verde-claro);border:1px solid var(--verde);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px"><span style="font-size:18px">✅</span><div style="font-size:13px;font-weight:600;color:var(--verde)">Checklist completo — listo para avanzar a Instalación</div></div>`;
     bodyHtml += `
       <div class="modal-section">
-        <div class="modal-section-titulo">Checklist pre-instalación</div>
+        <div class="modal-section-titulo">Preparación — Checklist</div>
         <div class="checklist">
-          <div class="check-item ${p.mat_paneles_ok&&p.mat_inversor_ok&&p.mat_estructura_ok?'ok':''}">
-            <div class="check-box">${p.mat_paneles_ok&&p.mat_inversor_ok&&p.mat_estructura_ok?'✓':''}</div>
-            <div class="check-label">Materiales principales comprados</div>
-            <div class="check-sub">${p.paneles||'—'} paneles · ${p.inversor||'—'}</div>
+          <div class="check-item ${p.mat_paneles_ok?'ok':''}" onclick="toggleCheck(${id},'mat_paneles_ok',${!p.mat_paneles_ok})">
+            <div class="check-box">${p.mat_paneles_ok?'✓':''}</div>
+            <div><div class="check-label">Paneles comprados</div><div class="check-sub">JA Solar 645W · ${p.paneles||'—'} módulos</div></div>
+          </div>
+          <div class="check-item ${p.mat_inversor_ok?'ok':''}" onclick="toggleCheck(${id},'mat_inversor_ok',${!p.mat_inversor_ok})">
+            <div class="check-box">${p.mat_inversor_ok?'✓':''}</div>
+            <div><div class="check-label">Inversor comprado</div><div class="check-sub">${p.inversor||'Growatt'}</div></div>
+          </div>
+          <div class="check-item ${p.mat_estructura_ok?'ok':''}" onclick="toggleCheck(${id},'mat_estructura_ok',${!p.mat_estructura_ok})">
+            <div class="check-box">${p.mat_estructura_ok?'✓':''}</div>
+            <div><div class="check-label">Estructura comprada</div><div class="check-sub">ALUMINEX · ${p.paneles||'—'} módulos</div></div>
           </div>
           <div class="check-item ${p.paco_confirmado?'ok':''}" onclick="toggleCheck(${id},'paco_confirmado',${!p.paco_confirmado})">
             <div class="check-box">${p.paco_confirmado?'✓':''}</div>
-            <div class="check-label">Paco Márquez confirmado</div>
-            <div class="check-sub">${p.fecha_instalacion?'📅 '+p.fecha_instalacion:'Sin fecha asignada'}</div>
-          </div>
-          <div class="check-item ${p.anticipo_ok?'ok':''}" onclick="toggleCheck(${id},'anticipo_ok',${!p.anticipo_ok})">
-            <div class="check-box">${p.anticipo_ok?'✓':''}</div>
-            <div class="check-label">Anticipo del cliente recibido</div>
-            <div class="check-sub">${p.cobrado>0?fmt(p.cobrado)+' recibido':'Sin cobros registrados'}</div>
+            <div><div class="check-label">Paco Márquez confirmado</div><div class="check-sub">${p.fecha_instalacion?'📅 '+p.fecha_instalacion:'Sin fecha asignada'}</div></div>
           </div>
         </div>
-      </div>`;
-
-    bodyHtml += `
+      </div>
       <div class="modal-section">
-        <div class="modal-section-titulo">Materiales del proyecto</div>
-        <div class="mat-row ${p.mat_paneles_ok?'comprado':''}">
-          <div><div class="mat-label">☀ Paneles JA Solar 645W</div><div class="mat-detalle">${p.paneles||'—'} módulos</div></div>
-          <div class="mat-qty">${p.paneles||'—'}</div>
-          <div class="mat-check ${p.mat_paneles_ok?'ok':''}" onclick="toggleCheck(${id},'mat_paneles_ok',${!p.mat_paneles_ok})">${p.mat_paneles_ok?'✓':''}</div>
-        </div>
-        <div class="mat-row ${p.mat_inversor_ok?'comprado':''}">
-          <div><div class="mat-label">💹 Inversor ${p.inversor||'Growatt'}</div><div class="mat-detalle">1 unidad</div></div>
-          <div class="mat-qty">1</div>
-          <div class="mat-check ${p.mat_inversor_ok?'ok':''}" onclick="toggleCheck(${id},'mat_inversor_ok',${!p.mat_inversor_ok})">${p.mat_inversor_ok?'✓':''}</div>
-        </div>
-        <div class="mat-row ${p.mat_estructura_ok?'comprado':''}">
-          <div><div class="mat-label">🔩 Estructura ALUMINEX</div><div class="mat-detalle">Para ${p.paneles||'—'} paneles</div></div>
-          <div class="mat-qty">${p.paneles||'—'}</div>
-          <div class="mat-check ${p.mat_estructura_ok?'ok':''}" onclick="toggleCheck(${id},'mat_estructura_ok',${!p.mat_estructura_ok})">${p.mat_estructura_ok?'✓':''}</div>
-        </div>
-      </div>`;
-  }
-
-  // ETAPA 4-5: EJECUCIÓN — lo que importa es el estado logístico
-  if (p.etapa>=4&&p.etapa<=5) {
-    bodyHtml += `
-      <div class="modal-section">
-        <div class="modal-section-titulo">Estado de ejecución</div>
-        <div class="checklist">
-          <div class="check-item ${p.paco_confirmado?'ok':'alerta'}">
-            <div class="check-box">${p.paco_confirmado?'✓':'!'}</div>
-            <div class="check-label">Paco Márquez ${p.paco_confirmado?'confirmado':'por confirmar'}</div>
-            <div class="check-sub">${p.fecha_instalacion?'📅 '+p.fecha_instalacion:'Sin fecha'}</div>
-          </div>
-          <div class="check-item ${p.mat_paneles_ok&&p.mat_inversor_ok&&p.mat_estructura_ok?'ok':'alerta'}">
-            <div class="check-box">${p.mat_paneles_ok&&p.mat_inversor_ok&&p.mat_estructura_ok?'✓':'!'}</div>
-            <div class="check-label">Material en sitio</div>
-            <div class="check-sub">${p.paneles||'—'} paneles · ${p.inversor||'—'}</div>
-          </div>
-          <div class="check-item ${p.anticipo_ok?'ok':'alerta'}">
-            <div class="check-box">${p.anticipo_ok?'✓':'!'}</div>
-            <div class="check-label">Anticipo recibido</div>
-            <div class="check-sub">${fmt(p.cobrado||0)} de ${fmt(p.monto||0)}</div>
-          </div>
-        </div>
-      </div>`;
-
-    bodyHtml += `
-      <div class="modal-section">
-        <div class="modal-section-titulo">Estado financiero</div>
+        <div class="modal-section-titulo">Financiero</div>
         <div class="modal-grid">
           <div class="modal-campo"><div class="modal-campo-label">Monto total</div><div class="modal-campo-valor" style="color:var(--verde)">${fmt(p.monto)}</div></div>
           <div class="modal-campo"><div class="modal-campo-label">Cobrado</div><div class="modal-campo-valor">${fmt(p.cobrado)} (${pct(p.cobrado,p.monto)}%)</div></div>
-          <div class="modal-campo"><div class="modal-campo-label">Por cobrar</div><div class="modal-campo-valor" style="color:var(--rojo)">${fmt(pendiente)}</div></div>
-          <div class="modal-campo"><div class="modal-campo-label">Fecha instalación</div><div class="modal-campo-valor">${p.fecha_instalacion||'—'}</div></div>
+          <div class="modal-campo"><div class="modal-campo-label">Por cobrar</div><div class="modal-campo-valor" style="color:var(--suave)">${fmt(pendiente)} (en planeación)</div></div>
+          <div class="modal-campo"><div class="modal-campo-label">Fecha instalación</div><div class="modal-campo-valor">${p.fecha_instalacion||'Por definir'}</div></div>
         </div>
       </div>`;
   }
 
-  // ETAPA 6-7: POST-INSTALACIÓN — lo que importa es trámite + cobro
-  if (p.etapa>=6) {
-    if (pendiente>0) bodyHtml += `
-      <div class="alerta-panel">
-        <span style="font-size:18px">💰</span>
-        <div class="alerta-panel-texto">Saldo pendiente: ${fmt(pendiente)}</div>
+  // ETAPA 3: INSTALACIÓN
+  if (p.etapa===3) {
+    if (pendiente>0) bodyHtml += `<div class="info-panel"><div class="info-panel-titulo">💰 Cobro en instalación</div><div class="info-panel-texto">Saldo pendiente: <strong>${fmt(pendiente)}</strong></div></div>`;
+    bodyHtml += `
+      <div class="modal-section">
+        <div class="modal-section-titulo">Estado de instalación</div>
+        <div class="checklist">
+          <div class="check-item ${p.paco_confirmado?'ok':'alerta'}">
+            <div class="check-box">${p.paco_confirmado?'✓':'!'}</div>
+            <div><div class="check-label">Paco Márquez ${p.paco_confirmado?'confirmado':'por confirmar'}</div><div class="check-sub">${p.fecha_instalacion?'📅 '+p.fecha_instalacion:'Sin fecha'}</div></div>
+          </div>
+          <div class="check-item ${p.mat_paneles_ok&&p.mat_inversor_ok&&p.mat_estructura_ok?'ok':'alerta'}">
+            <div class="check-box">${p.mat_paneles_ok&&p.mat_inversor_ok&&p.mat_estructura_ok?'✓':'!'}</div>
+            <div><div class="check-label">Material completo</div><div class="check-sub">${p.paneles||'—'} paneles · ${p.inversor||'—'}</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-titulo">Financiero</div>
+        <div class="modal-grid">
+          <div class="modal-campo"><div class="modal-campo-label">Monto total</div><div class="modal-campo-valor" style="color:var(--verde)">${fmt(p.monto)}</div></div>
+          <div class="modal-campo"><div class="modal-campo-label">Cobrado</div><div class="modal-campo-valor">${fmt(p.cobrado)} (${pct(p.cobrado,p.monto)}%)</div></div>
+          <div class="modal-campo"><div class="modal-campo-label">Por cobrar</div><div class="modal-campo-valor" style="color:var(--sol);font-weight:700">${fmt(pendiente)} (en instalación)</div></div>
+          <div class="modal-campo"><div class="modal-campo-label">CFE</div><div class="modal-campo-valor">${!p.cfe||p.cfe==='no'?'No aplica':p.cfe==='pendiente'?'⏳ Pendiente':p.cfe==='proceso'?'🔄 En proceso':'✓ Listo'}</div></div>
+        </div>
       </div>`;
+  }
 
+  // ETAPA 4-5: POST-INSTALACIÓN
+  if (p.etapa>=4) {
+    if (pendiente>0) bodyHtml += `<div class="alerta-panel"><span style="font-size:18px">💰</span><div class="alerta-panel-texto">Saldo crítico: ${fmt(pendiente)} — instalación terminada, pendiente de cobro</div></div>`;
+    else bodyHtml += `<div style="background:var(--verde-claro);border:1px solid var(--verde);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px"><span style="font-size:18px">✅</span><div style="font-size:13px;font-weight:600;color:var(--verde)">Cobro completo</div></div>`;
     bodyHtml += `
       <div class="modal-section">
         <div class="modal-section-titulo">Estado post-instalación</div>
         <div class="modal-grid">
-          <div class="modal-campo"><div class="modal-campo-label">Saldo por cobrar</div><div class="modal-campo-valor" style="color:${pendiente>0?'var(--rojo)':'var(--verde)'};font-weight:700">${pendiente>0?fmt(pendiente):'✓ Cobro completo'}</div></div>
+          <div class="modal-campo"><div class="modal-campo-label">Saldo por cobrar</div><div class="modal-campo-valor" style="color:${pendiente>0?'var(--rojo)':'var(--verde)'};font-weight:700">${pendiente>0?fmt(pendiente):'✓ Completo'}</div></div>
           <div class="modal-campo"><div class="modal-campo-label">Trámite CFE</div><div class="modal-campo-valor">${!p.cfe||p.cfe==='no'?'No aplica':p.cfe==='pendiente'?'⏳ Pendiente':p.cfe==='proceso'?'🔄 En proceso':'✓ Completado'}</div></div>
           <div class="modal-campo"><div class="modal-campo-label">Servicios extras</div><div class="modal-campo-valor">${p.extras||'Ninguno'}</div></div>
           <div class="modal-campo"><div class="modal-campo-label">Cobrado</div><div class="modal-campo-valor">${fmt(p.cobrado)} (${pct(p.cobrado,p.monto)}%)</div></div>
@@ -819,15 +955,11 @@ async function verDetalle(id) {
       </div>`;
   }
 
-  // Siempre mostrar avance
   bodyHtml += `
     <div class="modal-section">
       <div class="modal-section-titulo">Avance del proyecto</div>
       <div class="etapas-lista">
-        ${ETAPAS.map(e=>`<div class="etapa-item ${e.id<p.etapa?'completada':e.id===p.etapa?'activa':''}">
-          <div class="etapa-check">${e.id<p.etapa?'✓':e.id===p.etapa?'●':''}</div>
-          <div class="etapa-nombre-modal">${e.nombre}</div>
-        </div>`).join('')}
+        ${ETAPAS.map(e=>`<div class="etapa-item ${e.id<p.etapa?'completada':e.id===p.etapa?'activa':''}"><div class="etapa-check">${e.id<p.etapa?'✓':e.id===p.etapa?'●':''}</div><div class="etapa-nombre-modal">${e.nombre}</div></div>`).join('')}
       </div>
     </div>`;
 
@@ -837,16 +969,29 @@ async function verDetalle(id) {
     <div style="flex:1"></div>
     <button class="btn btn-secondary" onclick="abrirEdicion(${id})">✏️ Editar</button>
     ${p.etapa>1?`<button class="btn btn-secondary" onclick="cambiarEtapa(${id},${p.etapa-1})">← Regresar</button>`:''}
-    ${p.etapa<7?`<button class="btn btn-primary" onclick="cambiarEtapa(${id},${p.etapa+1})">Avanzar → ${getEtapaNombre(p.etapa+1)}</button>`:'<span style="color:var(--verde);font-weight:600;font-size:13px">✓ Completado</span>'}`;
+    ${p.etapa<5?`<button class="btn btn-primary" onclick="cambiarEtapa(${id},${p.etapa+1})">Avanzar → ${getEtapaNombre(p.etapa+1)}</button>`:'<span style="color:var(--verde);font-weight:600;font-size:13px">✓ Completado</span>'}`;
   document.getElementById('modal-detalle').classList.add('open');
 }
 
 async function toggleCheck(id, campo, valor) {
   const { error } = await db.from('proyectos').update({[campo]: valor}).eq('id', id);
   if (error) { showToast('Error','error'); return; }
+  const p = proyectos.find(x=>x.id===id);
+  if (p && p.etapa===2) {
+    const updated = {...p, [campo]: valor};
+    if (updated.mat_paneles_ok&&updated.mat_inversor_ok&&updated.mat_estructura_ok&&updated.paco_confirmado) {
+      await db.from('proyectos').update({etapa:3}).eq('id', id);
+      showToast('✅ Checklist completo — avanzado a Instalación','success');
+      await cargarProyectos();
+      verDetalle(id);
+      return;
+    }
+  }
+  showToast(valor?'✓ Marcado':'Desmarcado','success');
   await cargarProyectos();
   verDetalle(id);
 }
+
 
 // ── EDITAR ──
 function abrirEdicion(id) {

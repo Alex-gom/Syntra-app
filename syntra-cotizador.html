@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syntra — Cotizador</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f5f7; --blanco: #ffffff; --texto: #1d1d1f; --suave: #6e6e73;
+  --borde: #d2d2d7; --verde: #1d6f42; --verde-claro: #e8f5ee;
+  --rojo: #c0392b; --rojo-claro: #fdecea; --azul: #0066cc;
+}
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--texto); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+nav { background: rgba(245,245,247,0.85); backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--borde); padding: 0 48px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.nav-logo { font-size: 17px; font-weight: 600; letter-spacing: 4px; }
+.nav-sub { font-size: 12px; color: var(--suave); }
+.wrap { max-width: 640px; margin: 0 auto; padding: 0 24px; }
+.hero { padding: 56px 0 40px; border-bottom: 1px solid var(--borde); margin-bottom: 40px; }
+.hero-label { font-size: 12px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--suave); margin-bottom: 10px; }
+.hero-titulo { font-size: 40px; font-weight: 300; letter-spacing: -1px; line-height: 1.1; }
+.hero-titulo strong { font-weight: 600; }
+.hero-sub { font-size: 15px; color: var(--suave); margin-top: 10px; line-height: 1.5; font-weight: 300; }
+.card { background: var(--blanco); border-radius: 18px; border: 1px solid var(--borde); padding: 28px; margin-bottom: 16px; }
+.card-titulo { font-size: 12px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--suave); margin-bottom: 20px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.campo { display: flex; flex-direction: column; gap: 6px; }
+.campo.full { grid-column: 1/-1; }
+.campo label { font-size: 12px; font-weight: 500; color: var(--suave); }
+.campo input, .campo select { padding: 11px 14px; border: 1px solid var(--borde); border-radius: 10px; font-size: 15px; font-family: inherit; background: var(--blanco); outline: none; transition: border 0.15s; color: var(--texto); width: 100%; }
+.campo input:focus, .campo select:focus { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(0,102,204,0.1); }
+.campo-hint { font-size: 12px; color: var(--suave); }
+.periodos-grid { display: grid; grid-template-columns: 80px 1fr; gap: 10px; align-items: center; margin-bottom: 10px; }
+.periodo-label { font-size: 13px; color: var(--suave); }
+.periodo-input { padding: 11px 14px; border: 1px solid var(--borde); border-radius: 10px; font-size: 15px; font-family: inherit; background: var(--blanco); outline: none; width: 100%; transition: border 0.15s; }
+.periodo-input:focus { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(0,102,204,0.1); }
+.periodo-input.actual { border-color: var(--verde); background: var(--verde-claro); font-weight: 500; }
+.btn-primary { background: var(--verde); color: white; border: none; border-radius: 12px; padding: 15px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; width: 100%; margin-bottom: 10px; }
+.btn-primary:hover { background: #1a5f38; }
+
+/* RESULTADO */
+.resultado { display: none; background: var(--texto); border-radius: 18px; padding: 28px; color: white; margin-bottom: 16px; }
+.resultado.show { display: block; }
+.resultado-label { font-size: 12px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 20px; }
+.resultado-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.res-item { text-align: center; }
+.res-valor { font-size: 40px; font-weight: 300; color: #34c759; letter-spacing: -1px; line-height: 1; }
+.res-valor.small { font-size: 20px; margin-top: 6px; }
+.res-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+.ajuste-row { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+.ajuste-texto { font-size: 13px; color: rgba(255,255,255,0.4); }
+.ajuste-controles { display: flex; align-items: center; gap: 12px; }
+.ajuste-btn { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+.ajuste-btn:hover { background: rgba(255,255,255,0.2); }
+.ajuste-num { font-size: 28px; font-weight: 300; color: #34c759; min-width: 40px; text-align: center; letter-spacing: -0.5px; }
+
+/* PRECIO */
+.total-display { padding: 11px 14px; background: var(--verde-claro); border: 1px solid var(--verde); border-radius: 10px; font-size: 20px; font-weight: 500; color: var(--verde); }
+
+/* RESUMEN */
+.resumen-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
+.resumen-overlay.open { display: flex; }
+.resumen-sheet { background: var(--blanco); border-radius: 20px 20px 0 0; width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; padding: 28px; }
+.resumen-handle { width: 36px; height: 4px; background: var(--borde); border-radius: 2px; margin: 0 auto 24px; }
+.resumen-titulo { font-size: 24px; font-weight: 300; letter-spacing: -0.5px; margin-bottom: 24px; }
+.resumen-titulo strong { font-weight: 600; }
+.resumen-section { margin-bottom: 20px; }
+.resumen-section-label { font-size: 11px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--suave); margin-bottom: 12px; }
+.resumen-sistema { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.resumen-sistema-item { background: var(--bg); border-radius: 12px; padding: 14px; text-align: center; }
+.resumen-sistema-val { font-size: 28px; font-weight: 300; letter-spacing: -0.5px; color: var(--verde); }
+.resumen-sistema-label { font-size: 11px; color: var(--suave); margin-top: 4px; }
+.resumen-linea { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--bg); font-size: 15px; }
+.resumen-linea:last-child { border-bottom: none; }
+.resumen-total { background: var(--texto); border-radius: 14px; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin: 16px 0; }
+.resumen-total-label { font-size: 15px; color: white; font-weight: 500; }
+.resumen-total-val { font-size: 32px; font-weight: 300; color: #34c759; letter-spacing: -0.5px; }
+.esquema { background: var(--verde-claro); border-radius: 14px; padding: 16px; font-size: 13px; color: var(--verde); line-height: 1.8; }
+footer { border-top: 1px solid var(--borde); padding: 28px 0; display: flex; justify-content: space-between; margin-top: 40px; }
+.footer-text { font-size: 12px; color: var(--suave); }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-logo">SYNTRA</div>
+  <div class="nav-sub">Cotizador Solar</div>
+</nav>
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-label">Herramientas</div>
+    <div class="hero-titulo">Cotizador<br><strong>solar.</strong></div>
+    <div class="hero-sub">Calcula el sistema ideal a partir del historial de consumo. Tarifa 01 y PDBT.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-titulo">Cliente</div>
+    <div class="form-grid">
+      <div class="campo full"><label>Nombre del cliente</label><input type="text" id="nombre" placeholder="Nombre completo"></div>
+      <div class="campo"><label>N° Servicio CFE</label><input type="text" id="num-servicio" placeholder="77200963396"></div>
+      <div class="campo"><label>Tarifa CFE</label>
+        <select id="tarifa" onchange="onTarifaChange()">
+          <option value="01">Tarifa 01 — Residencial</option>
+          <option value="PDBT">PDBT — Comercial</option>
+        </select>
+      </div>
+    </div>
+    <div class="campo hidden" id="campo-dias" style="margin-top:14px">
+      <label>Días del período</label>
+      <select id="dias"><option value="61">61 días (bimestral)</option><option value="30.5">30.5 días (mensual)</option></select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-titulo">Historial de consumo (kWh)</div>
+    <div style="display:grid;grid-template-columns:80px 1fr;gap:10px;margin-bottom:12px">
+      <span style="font-size:12px;font-weight:500;color:var(--suave);text-transform:uppercase;letter-spacing:1px">Período</span>
+      <span style="font-size:12px;font-weight:500;color:var(--suave);text-transform:uppercase;letter-spacing:1px">kWh</span>
+    </div>
+    <div id="periodos-container"></div>
+  </div>
+
+  <button class="btn-primary" onclick="calcular()">Calcular sistema</button>
+
+  <div class="resultado" id="resultado">
+    <div class="resultado-label">Sistema propuesto</div>
+    <div class="resultado-grid">
+      <div class="res-item"><div class="res-valor" id="res-paneles">—</div><div class="res-label">Paneles</div></div>
+      <div class="res-item"><div class="res-valor" id="res-potencia">—</div><div class="res-label">kWp</div></div>
+      <div class="res-item"><div class="res-valor small" id="res-inversor">—</div><div class="res-label">Inversor</div></div>
+    </div>
+    <div class="ajuste-row">
+      <span class="ajuste-texto">Ajustar paneles</span>
+      <div class="ajuste-controles">
+        <button class="ajuste-btn" onclick="ajustar(-1)">−</button>
+        <span class="ajuste-num" id="ajuste-num">—</span>
+        <button class="ajuste-btn" onclick="ajustar(1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="precio-card">
+    <div class="card-titulo">Precio</div>
+    <div class="form-grid">
+      <div class="campo">
+        <label>Precio por panel con IVA ($)</label>
+        <input type="number" id="precio-panel" placeholder="Ej. 8,500" oninput="actualizarTotal()">
+        <span class="campo-hint">Incluye inversor e IVA</span>
+      </div>
+      <div class="campo">
+        <label>Total del sistema</label>
+        <div class="total-display" id="total-display">—</div>
+      </div>
+    </div>
+    <div class="campo" style="margin-top:14px">
+      <label>Cobertura energética (%) — opcional</label>
+      <input type="number" id="cobertura" placeholder="Ej. 98" max="100">
+    </div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="campo">
+        <label>Extras fijos</label>
+        <select id="extras-fijos" onchange="actualizarTotal()">
+          <option value="0">Ninguno</option>
+          <option value="4500">Aumento de carga — $4,500</option>
+          <option value="4500">Sistema a 110V — $4,500</option>
+          <option value="3500">Flete San Juan/Tequis — $3,500</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label>Extra personalizado ($)</label>
+        <input type="number" id="extra-custom" placeholder="0" oninput="actualizarTotal()">
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-primary hidden" id="btn-cotizacion" onclick="verResumen()">Ver cotización</button>
+
+  <footer>
+    <div class="footer-text">Syntra Energía Solar · Querétaro, MX</div>
+    <div class="footer-text"><a href="https://project-hcjec.vercel.app/syntra-hub.html" style="color:#6e6e73;text-decoration:none">← Hub</a></div>
+  </footer>
+</div>
+
+<!-- RESUMEN SHEET -->
+<div class="resumen-overlay" id="resumen-overlay" onclick="if(event.target===this)cerrarResumen()">
+  <div class="resumen-sheet">
+    <div class="resumen-handle"></div>
+    <div class="resumen-titulo">Cotización<br><strong id="r-nombre">—</strong></div>
+    <div class="resumen-section">
+      <div class="resumen-section-label">Sistema propuesto</div>
+      <div class="resumen-sistema">
+        <div class="resumen-sistema-item"><div class="resumen-sistema-val" id="r-paneles">—</div><div class="resumen-sistema-label">Paneles</div></div>
+        <div class="resumen-sistema-item"><div class="resumen-sistema-val" id="r-potencia">—</div><div class="resumen-sistema-label">kWp</div></div>
+        <div class="resumen-sistema-item"><div class="resumen-sistema-val" style="font-size:18px;margin-top:6px" id="r-inversor">—</div><div class="resumen-sistema-label">Inversor</div></div>
+      </div>
+    </div>
+    <div class="resumen-section">
+      <div class="resumen-section-label">Desglose</div>
+      <div id="r-desglose"></div>
+    </div>
+    <div class="resumen-total">
+      <span class="resumen-total-label">Total</span>
+      <span class="resumen-total-val" id="r-total">—</span>
+    </div>
+    <div class="resumen-section">
+      <div class="resumen-section-label">Esquema de pago sugerido</div>
+      <div class="esquema" id="r-esquema"></div>
+    </div>
+    <button class="btn-primary" onclick="cerrarResumen()">Cerrar</button>
+  </div>
+</div>
+
+<script>
+const HORAS_SOLARES = 4.8;
+const POTENCIA_PANEL = 0.645;
+const DIAS_01 = 61;
+const INVERSORES = [
+  { nombre: 'Growatt 3.3k', kw: 3.3, maxPaneles: 6 },
+  { nombre: 'Growatt 5k', kw: 5.0, maxPaneles: 8 },
+  { nombre: 'Growatt 6k', kw: 6.0, maxPaneles: 10 },
+];
+const fmt = n => '$' + Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0});
+const r2 = n => Math.round(n*100)/100;
+let panelesFinales = 0;
+
+// Build periodos
+document.getElementById('periodos-container').innerHTML = ['1 (Antiguo)','2','3','4','5','6 (Actual)'].map((p,i)=>`
+  <div class="periodos-grid">
+    <span class="periodo-label">${p}</span>
+    <input type="number" id="kwh-${i+1}" placeholder="0" class="periodo-input ${i===5?'actual':''}">
+  </div>`).join('');
+
+function onTarifaChange() {
+  document.getElementById('campo-dias').classList.toggle('hidden', document.getElementById('tarifa').value !== 'PDBT');
+}
+
+function seleccionarInversor(p) { return INVERSORES.find(i=>p<=i.maxPaneles)||{nombre:'Multi',kw:'—'}; }
+
+function calcular() {
+  const kwhs = [];
+  for(let i=1;i<=6;i++){const v=parseFloat(document.getElementById(`kwh-${i}`).value);if(!isNaN(v)&&v>0)kwhs.push(v);}
+  if(!kwhs.length){alert('Ingresa al menos un período de consumo');return;}
+  const tarifa = document.getElementById('tarifa').value;
+  const dias = tarifa==='01'?DIAS_01:parseFloat(document.getElementById('dias').value);
+  const promedio = kwhs.reduce((a,b)=>a+b,0)/kwhs.length;
+  panelesFinales = Math.ceil((promedio/dias/HORAS_SOLARES)/POTENCIA_PANEL);
+  actualizarResultados();
+  document.getElementById('resultado').classList.add('show');
+  document.getElementById('precio-card').classList.remove('hidden');
+  document.getElementById('btn-cotizacion').classList.remove('hidden');
+}
+
+function actualizarResultados() {
+  const inv = seleccionarInversor(panelesFinales);
+  document.getElementById('res-paneles').textContent = panelesFinales;
+  document.getElementById('ajuste-num').textContent = panelesFinales;
+  document.getElementById('res-potencia').textContent = r2(panelesFinales*POTENCIA_PANEL);
+  document.getElementById('res-inversor').textContent = inv.nombre;
+  actualizarTotal();
+}
+
+function ajustar(dir) {
+  if(panelesFinales+dir<1)return;
+  panelesFinales+=dir;
+  actualizarResultados();
+}
+
+function actualizarTotal() {
+  const precio = parseFloat(document.getElementById('precio-panel').value)||0;
+  const extras = parseFloat(document.getElementById('extras-fijos').value)||0;
+  const custom = parseFloat(document.getElementById('extra-custom').value)||0;
+  const total = (precio*panelesFinales)+extras+custom;
+  document.getElementById('total-display').textContent = precio>0?fmt(total):'—';
+}
+
+function verResumen() {
+  const nombre = document.getElementById('nombre').value||'Cliente';
+  const precio = parseFloat(document.getElementById('precio-panel').value)||0;
+  const extras = parseFloat(document.getElementById('extras-fijos').value)||0;
+  const custom = parseFloat(document.getElementById('extra-custom').value)||0;
+  const total = (precio*panelesFinales)+extras+custom;
+  const inv = seleccionarInversor(panelesFinales);
+  const potencia = r2(panelesFinales*POTENCIA_PANEL);
+
+  document.getElementById('r-nombre').textContent = nombre;
+  document.getElementById('r-paneles').textContent = panelesFinales;
+  document.getElementById('r-potencia').textContent = potencia;
+  document.getElementById('r-inversor').textContent = inv.nombre;
+  document.getElementById('r-total').textContent = fmt(total);
+
+  let desglose = '';
+  if(precio>0) desglose += `<div class="resumen-linea"><span>${panelesFinales} paneles × ${fmt(precio)}</span><span>${fmt(precio*panelesFinales)}</span></div>`;
+  if(extras>0) desglose += `<div class="resumen-linea"><span>Servicio extra</span><span>${fmt(extras)}</span></div>`;
+  if(custom>0) desglose += `<div class="resumen-linea"><span>Extra personalizado</span><span>${fmt(custom)}</span></div>`;
+  document.getElementById('r-desglose').innerHTML = desglose;
+  document.getElementById('r-esquema').innerHTML = `Anticipo (50%): <strong>${fmt(total*0.5)}</strong><br>Contra entrega (30%): <strong>${fmt(total*0.3)}</strong><br>Conexión CFE (20%): <strong>${fmt(total*0.2)}</strong>`;
+
+  document.getElementById('resumen-overlay').classList.add('open');
+}
+
+function cerrarResumen() { document.getElementById('resumen-overlay').classList.remove('open'); }
+</script>
+</body>
+</html>

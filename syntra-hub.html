@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syntra</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f5f7;
+  --blanco: #ffffff;
+  --texto: #1d1d1f;
+  --suave: #6e6e73;
+  --borde: #d2d2d7;
+  --verde: #1d6f42;
+  --verde-claro: #e8f5ee;
+  --rojo: #c0392b;
+  --rojo-claro: #fdecea;
+  --azul: #0066cc;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--texto);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* NAV */
+nav {
+  background: rgba(245,245,247,0.85);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--borde);
+  padding: 0 48px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-logo {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  color: var(--texto);
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--suave);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ccc;
+}
+
+.status-dot.ok {
+  background: #34c759;
+}
+
+.nav-fecha {
+  font-size: 12px;
+  color: var(--suave);
+}
+
+/* WRAP */
+.wrap {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* HERO */
+.hero {
+  padding: 80px 0 64px;
+  border-bottom: 1px solid var(--borde);
+  margin-bottom: 64px;
+}
+
+.hero-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--suave);
+  margin-bottom: 12px;
+}
+
+.hero-titulo {
+  font-size: 56px;
+  font-weight: 300;
+  letter-spacing: -1.5px;
+  line-height: 1.05;
+  color: var(--texto);
+  margin-bottom: 8px;
+}
+
+.hero-titulo strong {
+  font-weight: 600;
+}
+
+.hero-sub {
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--suave);
+  margin-top: 12px;
+}
+
+/* STATS */
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--borde);
+  border: 1px solid var(--borde);
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 64px;
+}
+
+.stat {
+  background: var(--blanco);
+  padding: 28px 24px;
+  transition: background 0.15s;
+}
+
+.stat:hover { background: #fafafa; }
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--suave);
+  margin-bottom: 10px;
+  letter-spacing: 0.3px;
+}
+
+.stat-valor {
+  font-size: 34px;
+  font-weight: 300;
+  letter-spacing: -1px;
+  color: var(--texto);
+  line-height: 1;
+}
+
+.stat-valor.verde { color: var(--verde); }
+.stat-valor.rojo { color: var(--rojo); }
+
+.stat-sub {
+  font-size: 12px;
+  color: var(--suave);
+  margin-top: 6px;
+}
+
+/* SECTION LABEL */
+.section-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--suave);
+  margin-bottom: 20px;
+}
+
+/* GRID MÓDULOS */
+.modulos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 64px;
+}
+
+.modulo {
+  background: var(--blanco);
+  border-radius: 18px;
+  border: 1px solid var(--borde);
+  padding: 28px;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.modulo:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+  border-color: #c0c0c5;
+}
+
+.modulo.featured {
+  grid-column: span 2;
+  background: var(--texto);
+  color: white;
+  border-color: var(--texto);
+}
+
+.modulo.featured:hover {
+  background: #2a2a2e;
+  border-color: #2a2a2e;
+}
+
+.modulo.nueva-venta {
+  background: var(--verde);
+  color: white;
+  border-color: var(--verde);
+}
+
+.modulo.nueva-venta:hover {
+  background: #1a5f38;
+  border-color: #1a5f38;
+}
+
+.modulo-icono {
+  font-size: 28px;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.modulo-nombre {
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.modulo-desc {
+  font-size: 13px;
+  color: var(--suave);
+  line-height: 1.5;
+  font-weight: 300;
+  flex: 1;
+  margin-bottom: 20px;
+}
+
+.modulo.featured .modulo-desc,
+.modulo.nueva-venta .modulo-desc { color: rgba(255,255,255,0.6); }
+
+.modulo-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.modulo-stat-item {
+  background: rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.modulo-stat-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.modulo-stat-valor {
+  font-size: 20px;
+  font-weight: 500;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+.modulo-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.modulo-url {
+  font-size: 11px;
+  color: var(--suave);
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+.modulo.featured .modulo-url,
+.modulo.nueva-venta .modulo-url { color: rgba(255,255,255,0.4); }
+
+.modulo-arrow {
+  font-size: 18px;
+  color: var(--suave);
+  transition: transform 0.2s;
+}
+
+.modulo:hover .modulo-arrow { transform: translateX(4px); }
+.modulo.featured .modulo-arrow,
+.modulo.nueva-venta .modulo-arrow { color: rgba(255,255,255,0.5); }
+
+.pendiente-alerta {
+  background: rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  margin-bottom: 16px;
+  display: none;
+}
+
+/* APROBACIONES */
+.aprobaciones-section {
+  display: none;
+  margin-bottom: 64px;
+}
+
+.aprobacion-card {
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-left: 3px solid var(--rojo);
+  border-radius: 18px;
+  padding: 28px;
+  margin-bottom: 12px;
+}
+
+.aprobacion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.aprobacion-nombre {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  margin-bottom: 4px;
+}
+
+.aprobacion-meta {
+  font-size: 12px;
+  color: var(--suave);
+}
+
+.aprobacion-monto {
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: -0.5px;
+  color: var(--verde);
+}
+
+.aprobacion-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.aprobacion-item {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+}
+
+.aprobacion-item-label {
+  font-size: 11px;
+  color: var(--suave);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.aprobacion-item-valor {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--texto);
+  letter-spacing: -0.3px;
+}
+
+.aprobacion-notas {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--suave);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.aprobacion-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-aprobar {
+  flex: 1;
+  padding: 13px;
+  background: var(--verde);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: -0.2px;
+  transition: background 0.15s;
+}
+
+.btn-aprobar:hover { background: #1a5f38; }
+
+.btn-rechazar {
+  padding: 13px 24px;
+  background: transparent;
+  color: var(--rojo);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.btn-rechazar:hover {
+  background: var(--rojo-claro);
+  border-color: var(--rojo);
+}
+
+/* FOOTER */
+footer {
+  border-top: 1px solid var(--borde);
+  padding: 32px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.footer-left {
+  font-size: 12px;
+  color: var(--suave);
+}
+
+.footer-links {
+  display: flex;
+  gap: 20px;
+}
+
+.footer-link {
+  font-size: 12px;
+  color: var(--suave);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.footer-link:hover { color: var(--texto); }
+
+@media (max-width: 768px) {
+  .modulos-grid { grid-template-columns: 1fr; }
+  .modulo.featured { grid-column: span 1; }
+  .stats-strip { grid-template-columns: 1fr 1fr; }
+  .hero-titulo { font-size: 36px; }
+  nav { padding: 0 20px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">SYNTRA</div>
+  <div class="nav-right">
+    <div class="nav-status">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Conectando</span>
+    </div>
+    <div class="nav-fecha" id="fecha-display"></div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-label">Panel de operaciones</div>
+    <div class="hero-titulo">Bienvenido,<br><strong>Alejandro.</strong></div>
+    <div class="hero-sub">Todo lo que necesitas para operar Syntra — en un solo lugar.</div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-strip">
+    <div class="stat">
+      <div class="stat-label">Proyectos activos</div>
+      <div class="stat-valor" id="stat-proyectos">—</div>
+      <div class="stat-sub" id="stat-proyectos-sub">en ejecución</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Por cobrar</div>
+      <div class="stat-valor rojo" id="stat-cobrar">—</div>
+      <div class="stat-sub">proyectos activos</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Balance del mes</div>
+      <div class="stat-valor" id="stat-balance">—</div>
+      <div class="stat-sub" id="stat-mes"></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Cartera de crédito</div>
+      <div class="stat-valor" id="stat-cartera">—</div>
+      <div class="stat-sub">clientes financiados</div>
+    </div>
+  </div>
+
+  <!-- APROBACIONES PENDIENTES -->
+  <div class="aprobaciones-section" id="aprobaciones-section">
+    <div class="section-label" style="color:var(--rojo)">Ventas pendientes de aprobación</div>
+    <div id="aprobaciones-lista"></div>
+  </div>
+
+  <!-- MÓDULOS -->
+  <div class="section-label">Módulos de la plataforma</div>
+
+  <div class="modulos-grid">
+
+    <!-- TABLERO -->
+    <a class="modulo featured" href="https://project-hcjec.vercel.app/index.html" target="_blank">
+      <span class="modulo-icono">☀︎</span>
+      <div class="modulo-nombre">Tablero de Proyectos</div>
+      <div class="modulo-desc">Pipeline con las 5 etapas del ciclo de instalación. Checklist de materiales, calendario y reporte semanal.</div>
+      <div class="modulo-stats">
+        <div class="modulo-stat-item">
+          <div class="modulo-stat-label">Activos</div>
+          <div class="modulo-stat-valor" id="proy-activos">—</div>
+        </div>
+        <div class="modulo-stat-item">
+          <div class="modulo-stat-label">Instalación</div>
+          <div class="modulo-stat-valor" id="proy-instalados">—</div>
+        </div>
+        <div class="modulo-stat-item">
+          <div class="modulo-stat-label">Cerrados</div>
+          <div class="modulo-stat-valor" id="proy-cerrados">—</div>
+        </div>
+      </div>
+      <div class="modulo-footer">
+        <span class="modulo-url">/index.html</span>
+        <span class="modulo-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- NUEVA VENTA -->
+    <a class="modulo nueva-venta" href="https://project-hcjec.vercel.app/nueva-venta.html" target="_blank">
+      <span class="modulo-icono">＋</span>
+      <div class="modulo-nombre">Nueva Venta</div>
+      <div class="modulo-desc">Registro de ventas cerradas. Queda pendiente de aprobación antes de entrar al pipeline.</div>
+      <div class="pendiente-alerta" id="pendientes-badge">
+        <span id="pendientes-count">0</span> esperando aprobación
+      </div>
+      <div class="modulo-footer">
+        <span class="modulo-url">/nueva-venta.html</span>
+        <span class="modulo-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- FINANZAS -->
+    <a class="modulo" href="https://project-hcjec.vercel.app/syntra-finanzas.html" target="_blank">
+      <span class="modulo-icono">◈</span>
+      <div class="modulo-nombre">Finanzas</div>
+      <div class="modulo-desc">Dashboard mensual, resumen por categoría y vista anual. Registra movimientos y conecta pagos a proyectos.</div>
+      <div class="modulo-footer">
+        <span class="modulo-url">/syntra-finanzas.html</span>
+        <span class="modulo-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- COTIZADOR -->
+    <a class="modulo" href="https://project-hcjec.vercel.app/syntra-cotizador.html" target="_blank">
+      <span class="modulo-icono">⚡</span>
+      <div class="modulo-nombre">Cotizador Solar</div>
+      <div class="modulo-desc">Calcula el sistema ideal por consumo histórico. Tarifa 01 y PDBT. Esquema de pago sugerido.</div>
+      <div class="modulo-footer">
+        <span class="modulo-url">/syntra-cotizador.html</span>
+        <span class="modulo-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- CONTADOR -->
+    <a class="modulo" href="https://project-hcjec.vercel.app/contador.html" target="_blank">
+      <span class="modulo-icono">◻</span>
+      <div class="modulo-nombre">Portal Contador</div>
+      <div class="modulo-desc">Cartera de crédito, historial de pagos y UUIDs de facturas. Acceso independiente para el contador.</div>
+      <div class="modulo-footer">
+        <span class="modulo-url">/contador.html</span>
+        <span class="modulo-arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-left">Syntra Energía Solar · Querétaro, MX</div>
+    <div class="footer-links">
+      <a href="https://github.com/Alex-gom/Syntra-app" target="_blank" class="footer-link">GitHub</a>
+      <a href="https://vercel.com" target="_blank" class="footer-link">Vercel</a>
+      <a href="https://ypmkuroqjhgidqpjhvtj.supabase.co" target="_blank" class="footer-link">Supabase</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://ypmkuroqjhgidqpjhvtj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwbWt1cm9xamhnaWRxcGpodnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTk2MTcsImV4cCI6MjA5NTU3NTYxN30.4yhzqtKRlWJNMbxUyXnTonIicdh8Ose1geHI7wBQlws';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const fmt = n => '$' + Number(n||0).toLocaleString('es-MX', {minimumFractionDigits:0, maximumFractionDigits:0});
+const now = new Date();
+
+document.getElementById('fecha-display').textContent = now.toLocaleDateString('es-MX', {
+  day: 'numeric', month: 'long', year: 'numeric'
+});
+
+async function cargarStats() {
+  try {
+    const { data: proyectos } = await db.from('proyectos')
+      .select('etapa, monto, cobrado, estado_aprobacion, clientes(nombre), vendedor, paneles, inversor, fecha_instalacion, notas, id')
+      .order('created_at', { ascending: false });
+
+    const aprobados = proyectos?.filter(p => p.estado_aprobacion !== 'pendiente') || [];
+    const pendientes = proyectos?.filter(p => p.estado_aprobacion === 'pendiente') || [];
+
+    const activos = aprobados.filter(p => p.etapa < 5).length;
+    const instalados = aprobados.filter(p => p.etapa === 3).length;
+    const cerrados = aprobados.filter(p => p.etapa === 5).length;
+    const porCobrar = aprobados.reduce((s,p) => s+((p.monto||0)-(p.cobrado||0)), 0);
+
+    document.getElementById('stat-proyectos').textContent = activos;
+    document.getElementById('stat-cobrar').textContent = fmt(porCobrar);
+    document.getElementById('proy-activos').textContent = activos;
+    document.getElementById('proy-instalados').textContent = instalados;
+    document.getElementById('proy-cerrados').textContent = cerrados;
+
+    if (pendientes.length > 0) {
+      document.getElementById('pendientes-badge').style.display = 'block';
+      document.getElementById('pendientes-count').textContent = pendientes.length;
+      document.getElementById('aprobaciones-section').style.display = 'block';
+      renderPendientes(pendientes);
+    }
+
+    const mesInicio = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const mesFin = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().split('T')[0];
+    const { data: movs } = await db.from('movimientos').select('tipo, monto').gte('fecha', mesInicio).lte('fecha', mesFin);
+    const ingresos = movs?.filter(m=>m.tipo==='ingreso').reduce((s,m)=>s+(m.monto||0),0)||0;
+    const egresos = movs?.filter(m=>m.tipo==='egreso').reduce((s,m)=>s+(m.monto||0),0)||0;
+    const balance = ingresos - egresos;
+    const balEl = document.getElementById('stat-balance');
+    balEl.textContent = fmt(Math.abs(balance));
+    balEl.className = 'stat-valor ' + (balance >= 0 ? 'verde' : 'rojo');
+    document.getElementById('stat-mes').textContent = now.toLocaleDateString('es-MX',{month:'long'});
+
+    const { data: cartera } = await db.from('cartera_credito').select('id');
+    document.getElementById('stat-cartera').textContent = cartera?.length || 0;
+
+    document.getElementById('status-dot').className = 'status-dot ok';
+    document.getElementById('status-text').textContent = 'Conectado';
+
+  } catch(e) {
+    document.getElementById('status-text').textContent = 'Sin conexión';
+  }
+}
+
+function renderPendientes(pendientes) {
+  document.getElementById('aprobaciones-lista').innerHTML = pendientes.map(p => `
+    <div class="aprobacion-card">
+      <div class="aprobacion-header">
+        <div>
+          <div class="aprobacion-nombre">${p.clientes?.nombre||'Sin nombre'}</div>
+          <div class="aprobacion-meta">Vendedor: ${p.vendedor||'—'} · ${p.fecha_instalacion?p.fecha_instalacion:'Sin fecha'}</div>
+        </div>
+        <div class="aprobacion-monto">${fmt(p.monto)}</div>
+      </div>
+      <div class="aprobacion-grid">
+        <div class="aprobacion-item">
+          <div class="aprobacion-item-label">Paneles</div>
+          <div class="aprobacion-item-valor">${p.paneles||'—'}</div>
+        </div>
+        <div class="aprobacion-item">
+          <div class="aprobacion-item-label">Inversor</div>
+          <div class="aprobacion-item-valor" style="font-size:14px">${p.inversor||'—'}</div>
+        </div>
+        <div class="aprobacion-item">
+          <div class="aprobacion-item-label">Anticipo</div>
+          <div class="aprobacion-item-valor" style="font-size:16px">${fmt(p.cobrado)}</div>
+        </div>
+      </div>
+      ${p.notas?`<div class="aprobacion-notas">${p.notas}</div>`:''}
+      <div class="aprobacion-actions">
+        <button class="btn-aprobar" onclick="aprobarProyecto(${p.id})">Aprobar — entra a Venta Cerrada</button>
+        <button class="btn-rechazar" onclick="rechazarProyecto(${p.id})">Rechazar</button>
+      </div>
+    </div>`).join('');
+}
+
+async function aprobarProyecto(id) {
+  if (!confirm('¿Aprobar este proyecto?')) return;
+  const { error } = await db.from('proyectos').update({ estado_aprobacion: 'aprobado', etapa: 1 }).eq('id', id);
+  if (error) { alert('Error al aprobar'); return; }
+  await cargarStats();
+}
+
+async function rechazarProyecto(id) {
+  if (!confirm('¿Rechazar y eliminar este proyecto?')) return;
+  const { error } = await db.from('proyectos').delete().eq('id', id);
+  if (error) { alert('Error al rechazar'); return; }
+  await cargarStats();
+}
+
+cargarStats();
+</script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syntra — Nueva Venta</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f5f7; --blanco: #ffffff; --texto: #1d1d1f; --suave: #6e6e73;
+  --borde: #d2d2d7; --verde: #1d6f42; --verde-claro: #e8f5ee;
+  --rojo: #c0392b; --rojo-claro: #fdecea; --azul: #0066cc;
+}
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--texto); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+nav { background: rgba(245,245,247,0.85); backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--borde); padding: 0 48px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.nav-logo { font-size: 17px; font-weight: 600; letter-spacing: 4px; }
+.nav-sub { font-size: 12px; color: var(--suave); }
+.wrap { max-width: 640px; margin: 0 auto; padding: 0 24px; }
+.hero { padding: 56px 0 40px; border-bottom: 1px solid var(--borde); margin-bottom: 40px; }
+.hero-label { font-size: 12px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--suave); margin-bottom: 10px; }
+.hero-titulo { font-size: 40px; font-weight: 300; letter-spacing: -1px; line-height: 1.1; }
+.hero-titulo strong { font-weight: 600; }
+.hero-sub { font-size: 15px; color: var(--suave); margin-top: 10px; line-height: 1.5; font-weight: 300; }
+.card { background: var(--blanco); border-radius: 18px; border: 1px solid var(--borde); padding: 28px; margin-bottom: 16px; }
+.card-titulo { font-size: 12px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--suave); margin-bottom: 20px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.campo { display: flex; flex-direction: column; gap: 6px; }
+.campo.full { grid-column: 1/-1; }
+.campo label { font-size: 12px; font-weight: 500; color: var(--suave); }
+.campo input, .campo select, .campo textarea { padding: 11px 14px; border: 1px solid var(--borde); border-radius: 10px; font-size: 15px; font-family: inherit; background: var(--blanco); outline: none; transition: border 0.15s; color: var(--texto); width: 100%; }
+.campo input:focus, .campo select:focus, .campo textarea:focus { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(0,102,204,0.1); }
+.campo textarea { resize: vertical; min-height: 80px; }
+.btn-primary { background: var(--verde); color: white; border: none; border-radius: 12px; padding: 15px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; width: 100%; margin-bottom: 10px; }
+.btn-primary:hover { background: #1a5f38; }
+.btn-secondary { background: transparent; color: var(--texto); border: 1px solid var(--borde); border-radius: 12px; padding: 15px; font-size: 15px; font-weight: 400; cursor: pointer; font-family: inherit; transition: all 0.15s; width: 100%; }
+.btn-secondary:hover { background: var(--bg); }
+.exito { display: none; text-align: center; padding: 80px 20px; }
+.exito.show { display: block; }
+.exito-icono { font-size: 64px; margin-bottom: 24px; }
+.exito-titulo { font-size: 32px; font-weight: 300; letter-spacing: -0.5px; margin-bottom: 12px; }
+.exito-titulo strong { font-weight: 600; color: var(--verde); }
+.exito-sub { font-size: 15px; color: var(--suave); line-height: 1.6; margin-bottom: 32px; max-width: 400px; margin-left: auto; margin-right: auto; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: white; padding: 12px 24px; border-radius: 20px; font-size: 14px; z-index: 999; display: none; backdrop-filter: blur(10px); }
+.toast.show { display: block; }
+footer { border-top: 1px solid var(--borde); padding: 28px 0; display: flex; justify-content: space-between; margin-top: 40px; }
+.footer-text { font-size: 12px; color: var(--suave); }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">SYNTRA</div>
+  <div class="nav-sub">Registro de nueva venta</div>
+</nav>
+
+<div class="wrap">
+  <div id="form-view">
+    <div class="hero">
+      <div class="hero-label">Ventas</div>
+      <div class="hero-titulo">Nueva<br><strong>venta cerrada.</strong></div>
+      <div class="hero-sub">Llena los datos del cliente. Alejandro revisará y aprobará el proyecto antes de que entre al pipeline de instalación.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-titulo">Cliente</div>
+      <div class="form-grid">
+        <div class="campo full"><label>Nombre completo</label><input type="text" id="v-nombre" placeholder="Nombre del cliente"></div>
+        <div class="campo"><label>Teléfono</label><input type="text" id="v-tel" placeholder="442 123 4567"></div>
+        <div class="campo"><label>Email</label><input type="email" id="v-email" placeholder="cliente@email.com"></div>
+        <div class="campo full"><label>Dirección / Colonia</label><input type="text" id="v-dir" placeholder="Colonia o referencia"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-titulo">Sistema propuesto</div>
+      <div class="form-grid">
+        <div class="campo"><label>Tarifa CFE</label>
+          <select id="v-tarifa">
+            <option value="01">Tarifa 01 — Residencial</option>
+            <option value="PDBT">PDBT — Comercial</option>
+          </select>
+        </div>
+        <div class="campo"><label>Tipo de proyecto</label>
+          <select id="v-tipo">
+            <option value="baja-tension">Baja Tensión</option>
+            <option value="media-tension">Media Tensión</option>
+          </select>
+        </div>
+        <div class="campo"><label>Número de paneles</label><input type="number" id="v-paneles" placeholder="Ej. 6"></div>
+        <div class="campo"><label>Inversor Growatt</label>
+          <select id="v-inversor">
+            <option value="">Ninguno</option>
+            <option value="Growatt 3.3k">Growatt 3.3k</option>
+            <option value="Growatt 5k">Growatt 5k</option>
+            <option value="Growatt 6k">Growatt 6k</option>
+          </select>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--borde);padding-top:18px;margin-top:18px">
+        <div style="font-size:12px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--suave);margin-bottom:14px">🔋 Sistema de batería</div>
+        <div class="campo"><label>¿Incluye batería Luxpower?</label>
+          <select id="v-bateria" onchange="document.getElementById('v-bateria-fields').style.display=this.value==='true'?'grid':'none'">
+            <option value="false">No incluye batería</option>
+            <option value="true">Sí incluye batería</option>
+          </select>
+        </div>
+        <div id="v-bateria-fields" style="display:none;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+          <div class="campo"><label>Modelo de batería</label>
+            <select id="v-bateria-modelo">
+              <option value="5.1k">Luxpower 5.1kWh</option>
+              <option value="14.3k">Luxpower 14.3kWh</option>
+            </select>
+          </div>
+          <div class="campo"><label>Cantidad de baterías</label>
+            <input type="number" id="v-bateria-qty" value="1" min="1">
+          </div>
+          <div class="campo" style="grid-column:1/-1"><label>Inversor Luxpower</label>
+            <select id="v-inversor-bateria">
+              <option value="">Seleccionar...</option>
+              <optgroup label="Cargador — sin trámite CFE">
+                <option value="Cargador 3k">Cargador 3k</option>
+                <option value="Cargador 6k">Cargador 6k</option>
+                <option value="Cargador 12k">Cargador 12k</option>
+              </optgroup>
+              <optgroup label="Híbrido — requiere trámite CFE">
+                <option value="Híbrido 8k">Híbrido 8k</option>
+                <option value="Híbrido 12k">Híbrido 12k</option>
+                <option value="Híbrido 13k">Híbrido 13k</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-titulo">Condiciones económicas</div>
+      <div class="form-grid">
+        <div class="campo"><label>Monto total del proyecto ($)</label><input type="number" id="v-monto" placeholder="0"></div>
+        <div class="campo"><label>Anticipo recibido ($)</label><input type="number" id="v-anticipo" placeholder="0"></div>
+        <div class="campo"><label>Fecha estimada de instalación</label><input type="date" id="v-fecha"></div>
+        <div class="campo"><label>Vendedor</label><input type="text" id="v-vendedor" placeholder="Tu nombre"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-titulo">Servicios adicionales</div>
+      <div class="form-grid">
+        <div class="campo"><label>Trámite CFE</label>
+          <select id="v-cfe">
+            <option value="no">No aplica</option>
+            <option value="pendiente">Sí — pendiente</option>
+          </select>
+        </div>
+        <div class="campo"><label>Servicios extras</label>
+          <select id="v-extras">
+            <option value="">Ninguno</option>
+            <option value="Aumento de carga">Aumento de carga</option>
+            <option value="Cambio de nombre">Cambio de nombre</option>
+            <option value="Cambio de nombre + Aumento de carga">Ambos</option>
+          </select>
+        </div>
+        <div class="campo full"><label>Notas adicionales</label>
+          <textarea id="v-notas" placeholder="Condiciones especiales, acceso al techo, observaciones..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="enviarVenta()">Enviar para aprobación</button>
+  </div>
+
+  <div class="exito" id="exito-view">
+    <div class="exito-icono">✓</div>
+    <div class="exito-titulo">Venta<br><strong>registrada.</strong></div>
+    <div class="exito-sub">El proyecto quedó en espera de aprobación. Alejandro lo revisará antes de que entre al pipeline.</div>
+    <button class="btn-primary" style="max-width:240px;margin:0 auto" onclick="nuevaVenta()">Registrar otra venta</button>
+  </div>
+
+  <footer>
+    <div class="footer-text">Syntra Energía Solar · Querétaro, MX</div>
+    <div class="footer-text"><a href="https://project-hcjec.vercel.app/syntra-hub.html" style="color:#6e6e73;text-decoration:none">← Volver al hub</a></div>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://ypmkuroqjhgidqpjhvtj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwbWt1cm9xamhnaWRxcGpodnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTk2MTcsImV4cCI6MjA5NTU3NTYxN30.4yhzqtKRlWJNMbxUyXnTonIicdh8Ose1geHI7wBQlws';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show';
+  setTimeout(()=>t.className='toast', 3000);
+}
+
+async function enviarVenta() {
+  const nombre = document.getElementById('v-nombre').value.trim();
+  const monto = parseFloat(document.getElementById('v-monto').value)||0;
+  const vendedor = document.getElementById('v-vendedor').value.trim();
+  if (!nombre) { showToast('El nombre del cliente es obligatorio'); return; }
+  if (!monto) { showToast('El monto del proyecto es obligatorio'); return; }
+  if (!vendedor) { showToast('Ingresa tu nombre como vendedor'); return; }
+
+  const { data: cliente, error: errC } = await db.from('clientes').insert({
+    nombre, telefono: document.getElementById('v-tel').value,
+    email: document.getElementById('v-email').value,
+    vendedor, origen: 'nueva-venta', estado: 'pendiente',
+  }).select().single();
+  if (errC) { showToast('Error al registrar'); return; }
+
+  const tieneBateria = document.getElementById('v-bateria').value === 'true';
+  const { error: errP } = await db.from('proyectos').insert({
+    cliente_id: cliente.id,
+    tipo: document.getElementById('v-tipo').value,
+    etapa: 1, estado_aprobacion: 'pendiente',
+    monto, cobrado: parseFloat(document.getElementById('v-anticipo').value)||0,
+    paneles: parseInt(document.getElementById('v-paneles').value)||0,
+    inversor: document.getElementById('v-inversor').value,
+    vendedor,
+    fecha_instalacion: document.getElementById('v-fecha').value||null,
+    cfe: document.getElementById('v-cfe').value,
+    extras: document.getElementById('v-extras').value,
+    notas: `Dirección: ${document.getElementById('v-dir').value||'—'} · Tarifa: ${document.getElementById('v-tarifa').value}\n${document.getElementById('v-notas').value}`,
+    tiene_bateria: tieneBateria,
+    bateria_modelo: tieneBateria ? document.getElementById('v-bateria-modelo').value : null,
+    bateria_qty: tieneBateria ? parseInt(document.getElementById('v-bateria-qty').value)||1 : null,
+    inversor_bateria: tieneBateria ? document.getElementById('v-inversor-bateria').value : null,
+  });
+  if (errP) { showToast('Error al registrar proyecto'); return; }
+
+  document.getElementById('form-view').classList.add('hidden');
+  document.getElementById('exito-view').classList.add('show');
+}
+
+function nuevaVenta() {
+  document.getElementById('exito-view').classList.remove('show');
+  document.getElementById('form-view').classList.remove('hidden');
+  ['v-nombre','v-tel','v-email','v-dir','v-paneles','v-monto','v-anticipo','v-fecha','v-vendedor','v-notas'].forEach(id=>document.getElementById(id).value='');
+}
+</script>
+</body>
+</html>

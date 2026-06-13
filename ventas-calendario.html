@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syntra — Calendario Ventas</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f5f7; --blanco: #fff; --texto: #1d1d1f; --suave: #6e6e73;
+  --borde: #d2d2d7; --verde: #1d6f42; --verde-claro: #e8f5ee;
+  --rojo: #c0392b; --rojo-claro: #fdecea;
+  --azul: #0066cc; --azul-claro: #e8f0fb;
+  --sol: #f5a623; --sol-claro: #fdf3e0;
+  --morado: #6b3fa0; --morado-claro: #f0ebf8;
+  --naranja: #d35400; --naranja-claro: #fdf0e8;
+}
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--texto); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+/* NAV */
+nav { background: rgba(245,245,247,0.88); backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--borde); padding: 0 40px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.nav-left { display: flex; align-items: center; gap: 12px; }
+.nav-logo { font-size: 17px; font-weight: 600; letter-spacing: 4px; }
+.nav-div { width: 1px; height: 16px; background: var(--borde); }
+.nav-titulo { font-size: 13px; color: var(--suave); }
+.nav-right { display: flex; align-items: center; gap: 10px; }
+.conn { font-size: 12px; font-weight: 500; }
+.conn.ok { color: #34c759; }
+.conn.loading { color: var(--suave); }
+
+/* WRAP */
+.wrap { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
+
+/* TOOLBAR */
+.toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.toolbar-left { display: flex; align-items: center; gap: 12px; }
+.mes-display { font-size: 24px; font-weight: 300; letter-spacing: -0.5px; min-width: 200px; }
+.cal-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--borde); background: var(--blanco); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.cal-btn:hover { background: var(--bg); }
+.toolbar-right { display: flex; align-items: center; gap: 8px; }
+.btn { padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+.btn-primary { background: var(--verde); color: white; }
+.btn-primary:hover { background: #155c33; }
+.btn-secondary { background: transparent; color: var(--texto); border: 1px solid var(--borde); }
+.btn-secondary:hover { background: var(--bg); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+
+/* LEYENDA */
+.leyenda { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.ley-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--suave); }
+.ley-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+/* FILTROS */
+.filtros { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+.filtro { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--borde); background: var(--blanco); color: var(--suave); transition: all 0.15s; }
+.filtro.active { background: var(--texto); color: white; border-color: var(--texto); }
+
+/* CALENDARIO */
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+.cal-dia-label { text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--suave); padding: 8px 0; }
+.cal-dia { height: 110px; background: var(--blanco); border-radius: 12px; border: 1px solid var(--borde); padding: 8px; transition: all 0.15s; cursor: pointer; overflow: hidden; }
+.cal-dia:hover { border-color: #b0b0b5; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.cal-dia.hoy { border-color: var(--texto); border-width: 2px; }
+.cal-dia.otro-mes { background: var(--bg); opacity: 0.5; cursor: default; }
+.cal-dia.otro-mes:hover { border-color: var(--borde); box-shadow: none; }
+.cal-dia-num { font-size: 13px; font-weight: 400; color: var(--suave); margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+.cal-dia.hoy .cal-dia-num { font-weight: 700; color: var(--texto); }
+.cal-dia-num .add-btn { width: 18px; height: 18px; border-radius: 50%; background: var(--bg); border: 1px solid var(--borde); font-size: 12px; cursor: pointer; display: none; align-items: center; justify-content: center; color: var(--suave); transition: all 0.15s; line-height: 1; }
+.cal-dia:hover .cal-dia-num .add-btn { display: flex; }
+.cal-dia-num .add-btn:hover { background: var(--verde); color: white; border-color: var(--verde); }
+
+/* EVENTOS */
+.evento { border-radius: 5px; padding: 2px 7px; font-size: 11px; font-weight: 500; margin-bottom: 3px; cursor: pointer; line-height: 1.4; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
+.evento:hover { opacity: 0.85; }
+.evento-mas { font-size: 10px; color: var(--suave); padding: 2px 4px; cursor: pointer; }
+.evento-mas:hover { color: var(--texto); }
+
+/* COLORES POR TIPO */
+.ev-instalacion { background: var(--verde); }
+.ev-preparacion { background: var(--sol); color: #1d1d1f; }
+.ev-puesta { background: var(--naranja); }
+.ev-prospeccion { background: var(--azul); }
+.ev-levantamiento { background: var(--morado); }
+.ev-seguimiento { background: #5ac8fa; color: #1d1d1f; }
+.ev-otro { background: var(--suave); }
+
+/* LISTA LATERAL */
+.layout { display: grid; grid-template-columns: 1fr 280px; gap: 20px; }
+.sidebar { position: sticky; top: 72px; height: fit-content; }
+.sidebar-card { background: var(--blanco); border-radius: 16px; border: 1px solid var(--borde); overflow: hidden; margin-bottom: 14px; }
+.sidebar-header { padding: 14px 18px; border-bottom: 1px solid var(--borde); display: flex; justify-content: space-between; align-items: center; }
+.sidebar-titulo { font-size: 13px; font-weight: 600; }
+.sidebar-sub { font-size: 12px; color: var(--suave); }
+.sidebar-item { padding: 12px 18px; border-bottom: 1px solid var(--bg); cursor: pointer; transition: background 0.1s; }
+.sidebar-item:last-child { border-bottom: none; }
+.sidebar-item:hover { background: var(--bg); }
+.si-tipo { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 3px; }
+.si-titulo { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+.si-meta { font-size: 11px; color: var(--suave); }
+.si-hora { font-size: 11px; font-weight: 600; color: var(--azul); }
+
+/* MODAL */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
+.overlay.open { display: flex; }
+.modal { background: var(--blanco); border-radius: 20px 20px 0 0; width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; }
+.modal-hdr { padding: 20px 24px; border-bottom: 1px solid var(--borde); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--blanco); z-index: 1; }
+.modal-tit { font-size: 17px; font-weight: 600; }
+.modal-x { width: 28px; height: 28px; border-radius: 50%; background: var(--bg); border: none; cursor: pointer; font-size: 16px; color: var(--suave); }
+.modal-bdy { padding: 24px; }
+.modal-ftr { padding: 16px 24px; border-top: 1px solid var(--borde); display: flex; justify-content: flex-end; gap: 10px; background: var(--blanco); position: sticky; bottom: 0; }
+.fg { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fc { display: flex; flex-direction: column; gap: 5px; }
+.fc.full { grid-column: 1/-1; }
+.fc label { font-size: 12px; font-weight: 500; color: var(--suave); }
+.fc input, .fc select, .fc textarea { padding: 11px 14px; border: 1px solid var(--borde); border-radius: 10px; font-size: 14px; font-family: inherit; background: var(--bg); outline: none; transition: border 0.15s; color: var(--texto); width: 100%; }
+.fc input:focus, .fc select:focus, .fc textarea:focus { border-color: var(--azul); background: var(--blanco); box-shadow: 0 0 0 3px rgba(0,102,204,0.1); }
+.fc textarea { resize: vertical; min-height: 70px; }
+
+/* DETALLE EVENTO */
+.det-tipo-badge { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+.det-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.det-item { background: var(--bg); border-radius: 10px; padding: 12px 14px; }
+.det-label { font-size: 11px; font-weight: 500; color: var(--suave); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.det-valor { font-size: 14px; font-weight: 400; }
+.det-notas { background: var(--bg); border-radius: 10px; padding: 12px 14px; font-size: 13px; color: var(--suave); line-height: 1.6; }
+
+/* INFO PROYECTO */
+.proy-info { background: var(--verde-claro); border: 1px solid var(--verde); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
+.proy-info-label { font-size: 11px; font-weight: 600; color: var(--verde); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.proy-info-nombre { font-size: 15px; font-weight: 500; color: var(--verde); }
+.proy-info-meta { font-size: 12px; color: var(--verde); opacity: 0.8; margin-top: 2px; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: white; padding: 12px 24px; border-radius: 20px; font-size: 14px; z-index: 999; display: none; backdrop-filter: blur(10px); }
+.toast.show { display: block; }
+.empty { text-align: center; padding: 32px; color: var(--suave); font-size: 13px; }
+footer { border-top: 1px solid var(--borde); padding: 28px 0; display: flex; justify-content: space-between; margin-top: 40px; }
+.footer-txt { font-size: 12px; color: var(--suave); }
+
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo">SYNTRA</div>
+    <div class="nav-div"></div>
+    <div class="nav-titulo">Calendario Ventas</div>
+  </div>
+  <div class="nav-right">
+    <span class="conn loading" id="conn">● Conectando...</span>
+    <button class="btn btn-primary" onclick="abrirNuevaVisita()">+ Nueva visita</button>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button class="cal-btn" onclick="cambiarMes(-1)">‹</button>
+      <div class="mes-display" id="mes-display"></div>
+      <button class="cal-btn" onclick="cambiarMes(1)">›</button>
+      <button class="btn btn-secondary btn-sm" onclick="irHoy()">Hoy</button>
+    </div>
+    <div class="toolbar-right">
+      <div class="filtros">
+        <div class="filtro active" onclick="setFiltro('todos',this)">Todos</div>
+        <div class="filtro" onclick="setFiltro('ventas',this)">Ventas</div>
+        <div class="filtro" onclick="setFiltro('proyectos',this)">Proyectos</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="leyenda">
+    <div class="ley-item"><div class="ley-dot" style="background:var(--verde)"></div>Instalación</div>
+    <div class="ley-item"><div class="ley-dot" style="background:var(--sol)"></div>Preparación</div>
+    <div class="ley-item"><div class="ley-dot" style="background:var(--naranja)"></div>Puesta en marcha</div>
+    <div class="ley-item"><div class="ley-dot" style="background:var(--azul)"></div>Prospección</div>
+    <div class="ley-item"><div class="ley-dot" style="background:var(--morado)"></div>Levantamiento</div>
+    <div class="ley-item"><div class="ley-dot" style="background:#5ac8fa"></div>Seguimiento</div>
+    <div class="ley-item"><div class="ley-dot" style="background:var(--suave)"></div>Otro</div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <div class="sidebar">
+      <div class="sidebar-card">
+        <div class="sidebar-header">
+          <div class="sidebar-titulo">Esta semana</div>
+          <div class="sidebar-sub" id="sidebar-semana"></div>
+        </div>
+        <div id="sidebar-lista"><div class="empty">Sin eventos</div></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-txt">Syntra Energía Solar · Equipo de Ventas</div>
+    <div class="footer-txt">
+      <a href="https://project-hcjec.vercel.app/syntra-hub.html" style="color:var(--suave);text-decoration:none">← Hub</a>
+    </div>
+  </footer>
+</div>
+
+<!-- MODAL NUEVA VISITA -->
+<div class="overlay" id="m-visita">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-tit" id="m-visita-titulo">Nueva visita</div>
+      <button class="modal-x" onclick="cerrar('m-visita')">✕</button>
+    </div>
+    <div class="modal-bdy">
+      <div class="fg">
+        <div class="fc full"><label>Título / Descripción *</label>
+          <input type="text" id="v-titulo" placeholder="Ej. Visita de levantamiento a cliente X">
+        </div>
+        <div class="fc"><label>Tipo de visita</label>
+          <select id="v-tipo">
+            <option value="prospeccion">Prospección</option>
+            <option value="levantamiento">Levantamiento técnico</option>
+            <option value="seguimiento">Seguimiento</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="fc"><label>Área</label>
+          <select id="v-responsable">
+            <option value="ventas">Ventas</option>
+            <option value="proyectos">Proyectos</option>
+            <option value="todos">Todos</option>
+          </select>
+        </div>
+        <div class="fc"><label>Fecha *</label>
+          <input type="date" id="v-fecha">
+        </div>
+        <div class="fc"><label>Hora</label>
+          <input type="time" id="v-hora">
+        </div>
+        <div class="fc full"><label>Cliente / Empresa</label>
+          <input type="text" id="v-cliente" placeholder="Nombre del cliente o empresa">
+        </div>
+        <div class="fc full"><label>Proyecto relacionado (opcional)</label>
+          <select id="v-proyecto">
+            <option value="">Sin proyecto relacionado</option>
+          </select>
+        </div>
+        <div class="fc full"><label>Notas</label>
+          <textarea id="v-notas" placeholder="Detalles adicionales, dirección, observaciones..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-secondary" onclick="cerrar('m-visita')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-visita" onclick="guardarVisita()">Guardar visita</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE EVENTO -->
+<div class="overlay" id="m-detalle">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-tit" id="d-titulo"></div>
+      <button class="modal-x" onclick="cerrar('m-detalle')">✕</button>
+    </div>
+    <div class="modal-bdy" id="d-body"></div>
+    <div class="modal-ftr" id="d-footer"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SURL = 'https://ypmkuroqjhgidqpjhvtj.supabase.co';
+const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwbWt1cm9xamhnaWRxcGpodnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTk2MTcsImV4cCI6MjA5NTU3NTYxN30.4yhzqtKRlWJNMbxUyXnTonIicdh8Ose1geHI7wBQlws';
+const { createClient } = supabase;
+const db = createClient(SURL, SKEY);
+
+let calMes = new Date(); calMes.setDate(1);
+let visitas = [], proyectos = [];
+let filtroActual = 'todos';
+let editandoId = null;
+
+const ETAPA_NOMBRES = {1:'Venta Cerrada',2:'Preparación',3:'Instalación',4:'Puesta en Marcha',5:'Proyecto Cerrado'};
+const AREA_LABELS = { ventas: 'Ventas', proyectos: 'Proyectos', todos: 'Todos' };
+const TIPO_LABELS = { prospeccion:'Prospección', levantamiento:'Levantamiento', seguimiento:'Seguimiento', otro:'Otro' };
+const TIPO_COLORS = { prospeccion:'var(--azul)', levantamiento:'var(--morado)', seguimiento:'#5ac8fa', otro:'var(--suave)' };
+const TIPO_TEXT = { seguimiento:'#1d1d1f', otro:'#fff' };
+
+const fmt = d => d ? new Date(d+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'short'}) : '—';
+const fmtHora = h => h ? h.slice(0,5) : '';
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show';
+  setTimeout(()=>t.className='toast',3000);
+}
+
+function cerrar(id) { document.getElementById(id).classList.remove('open'); }
+
+// ── CARGAR ──
+async function cargar() {
+  const [v, p] = await Promise.all([
+    db.from('visitas').select('*').order('fecha',{ascending:true}).order('hora',{ascending:true}),
+    db.from('proyectos').select('id, clientes(nombre), etapa, fecha_instalacion').eq('archivado',false).eq('estado_aprobacion','aprobado').order('created_at',{ascending:false}),
+  ]);
+  visitas = v.data || [];
+  proyectos = p.data || [];
+
+  // Populate proyecto select
+  const sel = document.getElementById('v-proyecto');
+  sel.innerHTML = '<option value="">Sin proyecto relacionado</option>' +
+    proyectos.map(p=>`<option value="${p.id}">${p.clientes?.nombre||'Sin nombre'} — ${ETAPA_NOMBRES[p.etapa]||''}</option>`).join('');
+
+  document.getElementById('conn').textContent = '● Conectado';
+  document.getElementById('conn').className = 'conn ok';
+  renderCalendario();
+  renderSidebar();
+}
+
+// ── EVENTOS DEL MES ──
+function eventosDelDia(fecha) {
+  const f = fecha.toISOString().split('T')[0];
+  const evs = [];
+
+  // Proyectos (solo lectura) — instalaciones
+  if (filtroActual !== 'ventas') {
+    proyectos.forEach(p => {
+      if (p.fecha_instalacion === f) {
+        const nombre = p.clientes?.nombre || 'Sin nombre';
+        const etapa = p.etapa;
+        let cls = 'ev-instalacion';
+        if (etapa === 2) cls = 'ev-preparacion';
+        if (etapa === 4) cls = 'ev-puesta';
+        evs.push({ id: 'proy-'+p.id, titulo: nombre, cls, tipo: 'proyecto', etapa, proyectoId: p.id, hora: null });
+      }
+    });
+  }
+
+  // Visitas del equipo
+  if (filtroActual !== 'proyectos') {
+    visitas.forEach(v => {
+      if (v.fecha === f) {
+        if (filtroActual === 'ventas' && v.responsable === 'proyectos') return;
+        evs.push({ id: v.id, titulo: v.titulo, cls: 'ev-'+v.tipo, tipo: 'visita', hora: v.hora, responsable: v.responsable, tipoVisita: v.tipo });
+      }
+    });
+  }
+
+  // Ordenar por hora
+  evs.sort((a,b) => {
+    if (!a.hora && !b.hora) return 0;
+    if (!a.hora) return 1;
+    if (!b.hora) return -1;
+    return a.hora.localeCompare(b.hora);
+  });
+
+  return evs;
+}
+
+// ── RENDER CALENDARIO ──
+function renderCalendario() {
+  const mes = calMes.getMonth();
+  const anio = calMes.getFullYear();
+  const hoy = new Date();
+
+  document.getElementById('mes-display').textContent =
+    calMes.toLocaleDateString('es-MX',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
+
+  const primerDia = new Date(anio,mes,1).getDay();
+  const diasMes = new Date(anio,mes+1,0).getDate();
+  const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+  let html = dias.map(d=>`<div class="cal-dia-label">${d}</div>`).join('');
+
+  // Días vacíos
+  for (let i=0;i<primerDia;i++) html += `<div class="cal-dia otro-mes"></div>`;
+
+  for (let dia=1; dia<=diasMes; dia++) {
+    const fecha = new Date(anio,mes,dia);
+    const esHoy = hoy.getDate()===dia && hoy.getMonth()===mes && hoy.getFullYear()===anio;
+    const fechaStr = fecha.toISOString().split('T')[0];
+    const evs = eventosDelDia(fecha);
+    const MAX_SHOW = 3;
+    const visible = evs.slice(0, MAX_SHOW);
+    const resto = evs.length - MAX_SHOW;
+
+    html += `<div class="cal-dia ${esHoy?'hoy':''}" onclick="clickDia('${fechaStr}')">
+      <div class="cal-dia-num">
+        <span>${dia}</span>
+        <button class="add-btn" onclick="event.stopPropagation();abrirNuevaVisita('${fechaStr}')">+</button>
+      </div>
+      ${visible.map(ev=>`
+        <div class="evento ${ev.cls}" onclick="event.stopPropagation();verEvento('${ev.tipo}',${typeof ev.id==='string'?`'${ev.id}'`:ev.id})" title="${ev.titulo}">
+          ${ev.hora?`<span style="opacity:0.8;font-size:10px">${fmtHora(ev.hora)} </span>`:''}${ev.titulo}
+        </div>`).join('')}
+      ${resto>0?`<div class="evento-mas" onclick="event.stopPropagation();clickDia('${fechaStr}')">+${resto} más</div>`:''}
+    </div>`;
+  }
+
+  document.getElementById('cal-grid').innerHTML = html;
+}
+
+// ── SIDEBAR ESTA SEMANA ──
+function renderSidebar() {
+  const hoy = new Date();
+  const lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate() - (hoy.getDay()===0?6:hoy.getDay()-1));
+  const domingo = new Date(lunes);
+  domingo.setDate(lunes.getDate()+6);
+
+  document.getElementById('sidebar-semana').textContent =
+    `${fmt(lunes.toISOString().split('T')[0])} — ${fmt(domingo.toISOString().split('T')[0])}`;
+
+  const evsSemana = [];
+
+  // Proyectos con instalación esta semana
+  if (filtroActual !== 'ventas') {
+    proyectos.forEach(p => {
+      if (!p.fecha_instalacion) return;
+      const f = new Date(p.fecha_instalacion+'T12:00:00');
+      if (f>=lunes && f<=domingo) {
+        evsSemana.push({
+          tipo: 'proyecto', fecha: p.fecha_instalacion, hora: null,
+          titulo: p.clientes?.nombre||'Sin nombre',
+          sub: ETAPA_NOMBRES[p.etapa]||'',
+          color: p.etapa===3?'var(--verde)':p.etapa===2?'var(--sol)':'var(--naranja)',
+          id: 'proy-'+p.id
+        });
+      }
+    });
+  }
+
+  // Visitas esta semana
+  if (filtroActual !== 'proyectos') {
+    visitas.forEach(v => {
+      const f = new Date(v.fecha+'T12:00:00');
+      if (f>=lunes && f<=domingo) {
+        evsSemana.push({
+          tipo: 'visita', fecha: v.fecha, hora: v.hora,
+          titulo: v.titulo, sub: `${AREA_LABELS[v.responsable]||v.responsable} · ${TIPO_LABELS[v.tipo]||v.tipo}`,
+          color: TIPO_COLORS[v.tipo]||'var(--suave)', id: v.id
+        });
+      }
+    });
+  }
+
+  evsSemana.sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.hora||'').localeCompare(b.hora||''));
+
+  const el = document.getElementById('sidebar-lista');
+  if (!evsSemana.length) { el.innerHTML = '<div class="empty">Sin eventos esta semana</div>'; return; }
+  el.innerHTML = evsSemana.map(ev=>`
+    <div class="sidebar-item" onclick="verEvento('${ev.tipo}','${ev.id}')">
+      <div class="si-tipo" style="color:${ev.color}">${ev.tipo==='proyecto'?'📋 Proyecto':'🗓 Visita'}</div>
+      <div class="si-titulo">${ev.titulo}</div>
+      <div class="si-meta">${fmt(ev.fecha)} ${ev.hora?'· <span class="si-hora">'+fmtHora(ev.hora)+'</span>':''} · ${ev.sub}</div>
+    </div>`).join('');
+}
+
+// ── VER EVENTO ──
+function verEvento(tipo, id) {
+  if (tipo === 'proyecto') {
+    const pid = typeof id === 'string' ? parseInt(id.replace('proy-','')) : id;
+    const p = proyectos.find(x=>Number(x.id)===pid);
+    if (!p) return;
+    const nombre = p.clientes?.nombre||'Sin nombre';
+    document.getElementById('d-titulo').textContent = nombre;
+    document.getElementById('d-body').innerHTML = `
+      <div class="proy-info">
+        <div class="proy-info-label">📋 Proyecto — Solo lectura</div>
+        <div class="proy-info-nombre">${nombre}</div>
+        <div class="proy-info-meta">${ETAPA_NOMBRES[p.etapa]||''}</div>
+      </div>
+      <div class="det-grid">
+        <div class="det-item"><div class="det-label">Etapa</div><div class="det-valor">${ETAPA_NOMBRES[p.etapa]||'—'}</div></div>
+        <div class="det-item"><div class="det-label">Fecha instalación</div><div class="det-valor">${fmt(p.fecha_instalacion)}</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--suave);text-align:center;padding:8px">Este evento viene del tablero de proyectos y no puede editarse aquí.</div>`;
+    document.getElementById('d-footer').innerHTML = `<button class="btn btn-secondary" onclick="cerrar('m-detalle')">Cerrar</button>`;
+  } else {
+    const v = visitas.find(x=>Number(x.id)===Number(id));
+    if (!v) return;
+    const proy = v.proyecto_id ? proyectos.find(p=>Number(p.id)===Number(v.proyecto_id)) : null;
+    const color = TIPO_COLORS[v.tipo]||'var(--suave)';
+    document.getElementById('d-titulo').textContent = v.titulo;
+    document.getElementById('d-body').innerHTML = `
+      <div class="det-tipo-badge" style="background:${color};color:${v.tipo==='seguimiento'?'#1d1d1f':'white'}">${TIPO_LABELS[v.tipo]||v.tipo}</div>
+      ${proy?`<div class="proy-info" style="margin-bottom:16px">
+        <div class="proy-info-label">Proyecto relacionado</div>
+        <div class="proy-info-nombre">${proy.clientes?.nombre||'—'}</div>
+        <div class="proy-info-meta">${ETAPA_NOMBRES[proy.etapa]||''}</div>
+      </div>`:''}
+      <div class="det-grid">
+        <div class="det-item"><div class="det-label">Área</div><div class="det-valor">${AREA_LABELS[v.responsable]||v.responsable}</div></div>
+        <div class="det-item"><div class="det-label">Fecha y hora</div><div class="det-valor">${fmt(v.fecha)}${v.hora?' · '+fmtHora(v.hora):''}</div></div>
+        ${v.cliente_nombre?`<div class="det-item full" style="grid-column:1/-1"><div class="det-label">Cliente</div><div class="det-valor">${v.cliente_nombre}</div></div>`:''}
+      </div>
+      ${v.notas?`<div class="det-notas">${v.notas}</div>`:''}`;
+    document.getElementById('d-footer').innerHTML = `
+      <button class="btn btn-secondary btn-sm" style="color:var(--rojo)" onclick="eliminarVisita(${v.id})">Eliminar</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-secondary" onclick="cerrar('m-detalle')">Cerrar</button>
+      <button class="btn btn-primary" onclick="editarVisita(${v.id})">Editar</button>`;
+  }
+  document.getElementById('m-detalle').classList.add('open');
+}
+
+// ── CLICK DÍA ──
+function clickDia(fechaStr) {
+  const evs = [];
+  if (filtroActual !== 'ventas') {
+    proyectos.forEach(p=>{if(p.fecha_instalacion===fechaStr)evs.push({tipo:'proyecto',id:'proy-'+p.id,titulo:p.clientes?.nombre||'Sin nombre',sub:ETAPA_NOMBRES[p.etapa]||''});});
+  }
+  if (filtroActual !== 'proyectos') {
+    visitas.forEach(v=>{
+      if(v.fecha===fechaStr){
+        evs.push({tipo:'visita',id:v.id,titulo:v.titulo,sub:(AREA_LABELS[v.responsable]||v.responsable)+' · '+(TIPO_LABELS[v.tipo]||v.tipo),hora:v.hora});
+      }
+    });
+  }
+  if(!evs.length){abrirNuevaVisita(fechaStr);return;}
+  const fecha = new Date(fechaStr+'T12:00:00');
+  document.getElementById('d-titulo').textContent = fecha.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}).replace(/^\w/,c=>c.toUpperCase());
+  document.getElementById('d-body').innerHTML = evs.map(ev=>`
+    <div class="sidebar-item" style="border-radius:10px;border:1px solid var(--borde);margin-bottom:8px;cursor:pointer" onclick="cerrar('m-detalle');verEvento('${ev.tipo}','${ev.id}')">
+      <div class="si-tipo" style="color:${ev.tipo==='proyecto'?'var(--verde)':'var(--azul)'}">${ev.tipo==='proyecto'?'📋 Proyecto':'🗓 Visita'}</div>
+      <div class="si-titulo">${ev.titulo}</div>
+      <div class="si-meta">${ev.hora?fmtHora(ev.hora)+' · ':''}${ev.sub}</div>
+    </div>`).join('');
+  document.getElementById('d-footer').innerHTML = `
+    <button class="btn btn-secondary" onclick="cerrar('m-detalle')">Cerrar</button>
+    <button class="btn btn-primary" onclick="cerrar('m-detalle');abrirNuevaVisita('${fechaStr}')">+ Nueva visita</button>`;
+  document.getElementById('m-detalle').classList.add('open');
+}
+
+// ── NUEVA VISITA ──
+function abrirNuevaVisita(fechaStr='') {
+  editandoId = null;
+  document.getElementById('m-visita-titulo').textContent = 'Nueva visita';
+  document.getElementById('btn-guardar-visita').textContent = 'Guardar visita';
+  document.getElementById('btn-guardar-visita').onclick = guardarVisita;
+  document.getElementById('v-titulo').value = '';
+  document.getElementById('v-tipo').value = 'prospeccion';
+  document.getElementById('v-responsable').value = 'Sergio';
+  document.getElementById('v-fecha').value = fechaStr || new Date().toISOString().split('T')[0];
+  document.getElementById('v-hora').value = '';
+  document.getElementById('v-cliente').value = '';
+  document.getElementById('v-proyecto').value = '';
+  document.getElementById('v-notas').value = '';
+  document.getElementById('m-visita').classList.add('open');
+}
+
+function editarVisita(id) {
+  const v = visitas.find(x=>Number(x.id)===Number(id));
+  if (!v) return;
+  editandoId = id;
+  cerrar('m-detalle');
+  document.getElementById('m-visita-titulo').textContent = 'Editar visita';
+  document.getElementById('btn-guardar-visita').textContent = 'Actualizar';
+  document.getElementById('btn-guardar-visita').onclick = ()=>actualizarVisita(id);
+  document.getElementById('v-titulo').value = v.titulo;
+  document.getElementById('v-tipo').value = v.tipo;
+  document.getElementById('v-responsable').value = v.responsable;
+  document.getElementById('v-fecha').value = v.fecha;
+  document.getElementById('v-hora').value = v.hora||'';
+  document.getElementById('v-cliente').value = v.cliente_nombre||'';
+  document.getElementById('v-proyecto').value = v.proyecto_id||'';
+  document.getElementById('v-notas').value = v.notas||'';
+  document.getElementById('m-visita').classList.add('open');
+}
+
+async function guardarVisita() {
+  const titulo = document.getElementById('v-titulo').value.trim();
+  const fecha = document.getElementById('v-fecha').value;
+  if (!titulo) { toast('El título es obligatorio'); return; }
+  if (!fecha) { toast('La fecha es obligatoria'); return; }
+  const payload = {
+    titulo, tipo: document.getElementById('v-tipo').value,
+    responsable: document.getElementById('v-responsable').value,
+    fecha, hora: document.getElementById('v-hora').value || null,
+    cliente_nombre: document.getElementById('v-cliente').value.trim() || null,
+    proyecto_id: document.getElementById('v-proyecto').value || null,
+    notas: document.getElementById('v-notas').value.trim() || null,
+  };
+  const { error } = await db.from('visitas').insert(payload);
+  if (error) { toast('Error: '+error.message); return; }
+  cerrar('m-visita');
+  toast('Visita guardada ✓');
+  await cargar();
+}
+
+async function actualizarVisita(id) {
+  const titulo = document.getElementById('v-titulo').value.trim();
+  const fecha = document.getElementById('v-fecha').value;
+  if (!titulo || !fecha) { toast('Título y fecha son obligatorios'); return; }
+  const payload = {
+    titulo, tipo: document.getElementById('v-tipo').value,
+    responsable: document.getElementById('v-responsable').value,
+    fecha, hora: document.getElementById('v-hora').value || null,
+    cliente_nombre: document.getElementById('v-cliente').value.trim() || null,
+    proyecto_id: document.getElementById('v-proyecto').value || null,
+    notas: document.getElementById('v-notas').value.trim() || null,
+  };
+  const { error } = await db.from('visitas').update(payload).eq('id', id);
+  if (error) { toast('Error: '+error.message); return; }
+  cerrar('m-visita');
+  toast('Visita actualizada ✓');
+  await cargar();
+}
+
+async function eliminarVisita(id) {
+  if (!confirm('¿Eliminar esta visita?')) return;
+  await db.from('visitas').delete().eq('id', id);
+  cerrar('m-detalle');
+  toast('Visita eliminada');
+  await cargar();
+}
+
+// ── NAVEGACIÓN ──
+function cambiarMes(dir) {
+  calMes.setMonth(calMes.getMonth()+dir);
+  renderCalendario();
+  renderSidebar();
+}
+
+function irHoy() {
+  calMes = new Date(); calMes.setDate(1);
+  renderCalendario();
+  renderSidebar();
+}
+
+function setFiltro(f, el) {
+  filtroActual = f;
+  document.querySelectorAll('.filtro').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  renderCalendario();
+  renderSidebar();
+}
+
+// INIT
+cargar();
+</script>
+</body>
+</html>

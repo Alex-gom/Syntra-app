@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ecoambiente — Minutas</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f5f7; --blanco: #fff; --texto: #1d1d1f; --suave: #6e6e73;
+  --borde: #d2d2d7; --verde: #1a6b3c; --verde-claro: #e8f5ee;
+  --rojo: #c0392b; --rojo-claro: #fdecea;
+  --azul: #0066cc; --azul-claro: #e8f0fb;
+  --sol: #f5a623; --sol-claro: #fdf3e0;
+  --gris: #8e8e93;
+}
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--texto); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+/* NAV */
+nav { background: rgba(245,245,247,0.88); backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--borde); padding: 0 40px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.nav-left { display: flex; align-items: center; gap: 16px; }
+.nav-logo { font-size: 15px; font-weight: 600; letter-spacing: 3px; color: var(--texto); }
+.nav-divider { width: 1px; height: 16px; background: var(--borde); }
+.nav-titulo { font-size: 13px; color: var(--suave); }
+.nav-right { display: flex; align-items: center; gap: 10px; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; display: inline-block; margin-right: 5px; }
+.status-dot.ok { background: #34c759; }
+.nav-status { font-size: 12px; color: var(--suave); }
+
+/* TABS */
+.tabs { background: var(--blanco); border-bottom: 1px solid var(--borde); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; }
+.tab { padding: 14px 20px; font-size: 13px; color: var(--suave); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; font-weight: 400; }
+.tab.active { color: var(--texto); border-bottom-color: var(--texto); font-weight: 500; }
+.tab:hover { color: var(--texto); }
+.tab-badge { display: inline-block; background: var(--rojo); color: white; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+
+/* WRAP */
+.wrap { max-width: 1000px; margin: 0 auto; padding: 32px 24px; }
+.vista { display: none; }
+.vista.active { display: block; }
+
+/* HERO */
+.page-hero { padding: 0 0 36px; border-bottom: 1px solid var(--borde); margin-bottom: 36px; display: flex; justify-content: space-between; align-items: flex-end; }
+.page-titulo { font-size: 36px; font-weight: 300; letter-spacing: -0.8px; line-height: 1.1; }
+.page-titulo strong { font-weight: 600; }
+.page-sub { font-size: 14px; color: var(--suave); margin-top: 6px; font-weight: 300; }
+
+/* BTNS */
+.btn { padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+.btn-primary { background: var(--verde); color: white; }
+.btn-primary:hover { background: #155c33; }
+.btn-secondary { background: transparent; color: var(--texto); border: 1px solid var(--borde); }
+.btn-secondary:hover { background: var(--bg); }
+.btn-danger { background: var(--rojo-claro); color: var(--rojo); border: 1px solid var(--borde); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+
+/* STATS */
+.stats-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--borde); border: 1px solid var(--borde); border-radius: 16px; overflow: hidden; margin-bottom: 32px; }
+.stat { background: var(--blanco); padding: 18px 20px; }
+.stat-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: var(--suave); margin-bottom: 8px; }
+.stat-valor { font-size: 28px; font-weight: 300; letter-spacing: -0.5px; line-height: 1; }
+.stat-valor.rojo { color: var(--rojo); }
+.stat-valor.sol { color: var(--sol); }
+.stat-valor.verde { color: var(--verde); }
+.stat-sub { font-size: 11px; color: var(--suave); margin-top: 4px; }
+
+/* CARDS */
+.card { background: var(--blanco); border-radius: 16px; border: 1px solid var(--borde); overflow: hidden; margin-bottom: 12px; transition: box-shadow 0.15s; }
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+.card-header { padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.card-header-left { display: flex; align-items: center; gap: 14px; }
+.card-semana { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--suave); background: var(--bg); padding: 3px 8px; border-radius: 6px; }
+.card-fecha { font-size: 15px; font-weight: 500; letter-spacing: -0.2px; }
+.card-responsable { font-size: 12px; color: var(--suave); margin-top: 2px; }
+.card-resumen-preview { font-size: 13px; color: var(--suave); max-width: 400px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-badges { display: flex; gap: 6px; align-items: center; }
+.badge { font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 6px; display: inline-block; white-space: nowrap; }
+.badge-verde { background: var(--verde-claro); color: var(--verde); }
+.badge-rojo { background: var(--rojo-claro); color: var(--rojo); }
+.badge-sol { background: var(--sol-claro); color: #8b5e00; }
+.badge-azul { background: var(--azul-claro); color: var(--azul); }
+.badge-gris { background: var(--bg); color: var(--suave); border: 1px solid var(--borde); }
+.card-body { border-top: 1px solid var(--borde); padding: 18px 22px; display: none; }
+.card-body.open { display: block; }
+.card-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+/* INTENCIONES / ACUERDOS LIST */
+.item-list { display: flex; flex-direction: column; gap: 8px; }
+.item { background: var(--blanco); border-radius: 12px; border: 1px solid var(--borde); padding: 14px 18px; display: flex; align-items: flex-start; gap: 14px; transition: background 0.1s; }
+.item:hover { background: #fafafa; }
+.item.vencida { border-left: 3px solid var(--rojo); }
+.item.proxima { border-left: 3px solid var(--sol); }
+.item.ok { border-left: 3px solid var(--verde); }
+.item.completada { opacity: 0.5; }
+.item-semaforo { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.sem-rojo { background: var(--rojo); }
+.sem-sol { background: var(--sol); }
+.sem-verde { background: var(--verde); }
+.sem-gris { background: var(--gris); }
+.item-content { flex: 1; }
+.item-desc { font-size: 13px; font-weight: 400; line-height: 1.5; margin-bottom: 5px; }
+.item-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.item-responsable { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 5px; }
+.resp-alejandro { background: #e3f2fd; color: #1565c0; }
+.resp-gerardo { background: #f3e5f5; color: #6a1b9a; }
+.resp-ricardo { background: #fff3e0; color: #e65100; }
+.resp-sergio { background: #e8f5e9; color: #2e7d32; }
+.resp-todos { background: var(--bg); color: var(--suave); border: 1px solid var(--borde); }
+.item-fecha { font-size: 11px; color: var(--suave); }
+.item-fecha.vencida { color: var(--rojo); font-weight: 500; }
+.item-notas { font-size: 11px; color: var(--suave); margin-top: 4px; font-style: italic; }
+.item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.btn-icon { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--borde); background: var(--bg); cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; color: var(--suave); }
+.btn-icon:hover { background: var(--rojo-claro); color: var(--rojo); border-color: var(--rojo); }
+.btn-icon.check:hover { background: var(--verde-claro); color: var(--verde); border-color: var(--verde); }
+.btn-icon.edit:hover { background: var(--azul-claro); color: var(--azul); border-color: var(--azul); }
+
+/* FILTROS */
+.filtros-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+.filtro { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--borde); background: var(--blanco); color: var(--suave); transition: all 0.15s; }
+.filtro.active { background: var(--texto); color: white; border-color: var(--texto); }
+.filtros-sep { flex: 1; }
+
+/* CHIPS (multi-select responsables) */
+.chip-select { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid var(--borde); background: var(--blanco); color: var(--suave); cursor: pointer; transition: all 0.15s; user-select: none; }
+.chip:hover { border-color: var(--texto); color: var(--texto); }
+.chip.selected { background: var(--texto); color: white; border-color: var(--texto); }
+
+/* JUNTA DETALLE */
+.jd-back { background: none; border: none; color: var(--suave); font-size: 13px; cursor: pointer; padding: 0; margin-bottom: 14px; font-family: inherit; }
+.jd-back:hover { color: var(--texto); }
+.jd-meta-card { background: var(--blanco); border-radius: 16px; border: 1px solid var(--borde); padding: 22px; margin-bottom: 28px; }
+.jd-inline-form { background: var(--bg); border: 1px solid var(--borde); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+.jd-inline-form .form-grid { gap: 12px; }
+
+/* MODAL */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--blanco); border-radius: 20px 20px 0 0; width: 100%; max-width: 580px; max-height: 92vh; overflow-y: auto; }
+.modal-header { padding: 20px 24px; border-bottom: 1px solid var(--borde); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--blanco); z-index: 1; }
+.modal-titulo { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+.modal-close { width: 28px; height: 28px; border-radius: 50%; background: var(--bg); border: none; cursor: pointer; font-size: 14px; color: var(--suave); }
+.modal-body { padding: 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--borde); display: flex; justify-content: flex-end; gap: 10px; background: var(--blanco); position: sticky; bottom: 0; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-campo { display: flex; flex-direction: column; gap: 5px; }
+.form-campo.full { grid-column: 1/-1; }
+.form-campo label { font-size: 12px; font-weight: 500; color: var(--suave); }
+.form-campo input, .form-campo select, .form-campo textarea { padding: 10px 13px; border: 1px solid var(--borde); border-radius: 10px; font-size: 14px; font-family: inherit; background: var(--bg); outline: none; transition: border 0.15s; color: var(--texto); width: 100%; }
+.form-campo input:focus, .form-campo select:focus, .form-campo textarea:focus { border-color: var(--azul); background: var(--blanco); box-shadow: 0 0 0 3px rgba(0,102,204,0.1); }
+.form-campo textarea { resize: vertical; min-height: 80px; }
+.form-section { font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--suave); margin: 16px 0 10px; grid-column: 1/-1; }
+
+/* SEPARADOR */
+.section-label { font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--suave); margin-bottom: 14px; margin-top: 4px; }
+.empty { text-align: center; padding: 40px; color: var(--suave); font-size: 14px; }
+.loading { text-align: center; padding: 48px; color: var(--suave); }
+.loading-spinner { width: 22px; height: 22px; border: 2px solid var(--borde); border-top-color: var(--verde); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: white; padding: 12px 24px; border-radius: 20px; font-size: 14px; z-index: 999; display: none; backdrop-filter: blur(10px); }
+.toast.show { display: block; }
+.hidden { display: none; }
+footer { border-top: 1px solid var(--borde); padding: 28px 0; display: flex; justify-content: space-between; margin-top: 40px; }
+.footer-text { font-size: 12px; color: var(--suave); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo">ECOAMBIENTE</div>
+    <div class="nav-divider"></div>
+    <div class="nav-titulo">Juntas de Dirección</div>
+  </div>
+  <div class="nav-right">
+    <span class="nav-status"><span class="status-dot" id="status-dot"></span><span id="status-text">Conectando...</span></span>
+  </div>
+</nav>
+
+<div class="tabs">
+  <div class="tab active" id="tab-dashboard" onclick="cambiarVista('dashboard',this)">Dashboard</div>
+  <div class="tab" id="tab-intenciones" onclick="cambiarVista('intenciones',this)">Intenciones <span class="tab-badge hidden" id="badge-vencidas">0</span></div>
+  <div class="tab" id="tab-acuerdos" onclick="cambiarVista('acuerdos',this)">Acuerdos</div>
+  <div class="tab" id="tab-juntas" onclick="cambiarVista('juntas',this)">Histórico</div>
+</div>
+
+<div class="wrap">
+
+  <!-- DASHBOARD -->
+  <div class="vista active" id="vista-dashboard">
+    <div class="page-hero">
+      <div>
+        <div class="page-titulo" id="dashboard-saludo"><strong>Equipo.</strong></div>
+        <div class="page-sub" id="dashboard-fecha"></div>
+      </div>
+      <button class="btn btn-primary" onclick="abrirNuevaJunta()">+ Nueva junta</button>
+    </div>
+    <div class="stats-strip" id="stats-strip">
+      <div class="stat"><div class="loading-spinner"></div></div>
+      <div class="stat"></div><div class="stat"></div><div class="stat"></div>
+    </div>
+    <div class="section-label">Intenciones vencidas</div>
+    <div id="dash-vencidas" class="item-list"></div>
+    <div style="margin-top:28px" class="section-label">Próxima junta</div>
+    <div id="dash-proxima-junta"></div>
+    <div style="margin-top:28px" class="section-label">Última junta</div>
+    <div id="dash-ultima-junta"></div>
+  </div>
+
+  <!-- JUNTAS -->
+  <div class="vista" id="vista-juntas">
+    <div class="page-hero">
+      <div>
+        <div class="page-titulo"><strong>Juntas</strong><br><span style="font-weight:300">de dirección.</span></div>
+        <div class="page-sub">Historial semanal de reuniones</div>
+      </div>
+      <button class="btn btn-primary" onclick="abrirNuevaJunta()">+ Nueva junta</button>
+    </div>
+    <div id="lista-juntas"></div>
+  </div>
+
+  <!-- JUNTA DETALLE -->
+  <div class="vista" id="vista-junta-detalle">
+    <button class="jd-back" onclick="cambiarVista('juntas',document.getElementById('tab-juntas'))">← Volver a juntas</button>
+    <div class="page-hero">
+      <div>
+        <div class="page-titulo" id="jd-titulo"><strong>Junta</strong></div>
+        <div class="page-sub" id="jd-sub"></div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="eliminarJuntaDetalle()">Eliminar junta</button>
+    </div>
+
+    <div class="jd-meta-card">
+      <div class="form-grid" id="jd-meta-form"></div>
+    </div>
+
+    <div class="section-label">Intenciones abiertas · seguimiento</div>
+    <div id="jd-pendientes" class="item-list" style="margin-bottom:32px"></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="section-label" style="margin:0">Intenciones de esta junta</div>
+      <button class="btn btn-secondary btn-sm" onclick="mostrarFormIntencionJunta()">+ Agregar</button>
+    </div>
+    <div id="jd-form-intencion"></div>
+    <div id="jd-intenciones" class="item-list" style="margin-bottom:32px"></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="section-label" style="margin:0">Acuerdos de esta junta</div>
+      <button class="btn btn-secondary btn-sm" onclick="mostrarFormAcuerdoJunta()">+ Agregar</button>
+    </div>
+    <div id="jd-form-acuerdo"></div>
+    <div id="jd-acuerdos" class="item-list"></div>
+  </div>
+
+  <!-- INTENCIONES -->
+  <div class="vista" id="vista-intenciones">
+    <div class="page-hero">
+      <div>
+        <div class="page-titulo"><strong>Intenciones</strong><br><span style="font-weight:300">y compromisos.</span></div>
+        <div class="page-sub">Seguimiento de lo que cada quien se comprometió a hacer</div>
+      </div>
+      <button class="btn btn-primary" onclick="abrirNuevaIntencion()">+ Nueva intención</button>
+    </div>
+    <div class="filtros-row" id="filtros-intenciones">
+      <div class="filtro active" onclick="filtrarIntenciones('todos',this)">Todos</div>
+      <div class="filtro" onclick="filtrarIntenciones('vencida',this)">🔴 Vencidas</div>
+      <div class="filtro" onclick="filtrarIntenciones('proxima',this)">🟡 Próximas</div>
+      <div class="filtro" onclick="filtrarIntenciones('ok',this)">🟢 A tiempo</div>
+      <div class="filtro" onclick="filtrarIntenciones('completada',this)">✓ Completadas</div>
+      <div class="filtros-sep"></div>
+      <div class="filtro" onclick="filtrarIntenciones('Alejandro',this)">Alejandro</div>
+      <div class="filtro" onclick="filtrarIntenciones('Gerardo',this)">Gerardo</div>
+      <div class="filtro" onclick="filtrarIntenciones('Ricardo',this)">Ricardo</div>
+      <div class="filtro" onclick="filtrarIntenciones('Sergio',this)">Sergio</div>
+    </div>
+    <div id="lista-intenciones" class="item-list"></div>
+  </div>
+
+  <!-- ACUERDOS -->
+  <div class="vista" id="vista-acuerdos">
+    <div class="page-hero">
+      <div>
+        <div class="page-titulo"><strong>Acuerdos</strong><br><span style="font-weight:300">permanentes.</span></div>
+        <div class="page-sub">Decisiones tomadas en junta que aplican de manera continua</div>
+      </div>
+      <button class="btn btn-primary" onclick="abrirNuevoAcuerdo()">+ Nuevo acuerdo</button>
+    </div>
+    <div class="filtros-row" id="filtros-acuerdos">
+      <div class="filtro active" onclick="filtrarAcuerdos('todos',this)">Todos</div>
+      <div class="filtro" onclick="filtrarAcuerdos('Alejandro',this)">Alejandro</div>
+      <div class="filtro" onclick="filtrarAcuerdos('Gerardo',this)">Gerardo</div>
+      <div class="filtro" onclick="filtrarAcuerdos('Ricardo',this)">Ricardo</div>
+      <div class="filtro" onclick="filtrarAcuerdos('Sergio',this)">Sergio</div>
+    </div>
+    <div id="lista-acuerdos" class="item-list"></div>
+  </div>
+
+  <footer>
+    <div class="footer-text" style="text-align:center;width:100%">Ecoambiente Solar Industrial · Querétaro, MX</div>
+  </footer>
+</div>
+
+<!-- MODAL INTENCIÓN SUELTA -->
+<div class="modal-overlay" id="modal-intencion">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-titulo" id="modal-intencion-titulo">Nueva intención</div>
+      <button class="modal-close" onclick="cerrarModal('modal-intencion')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-campo full"><label>Responsables</label>
+          <div class="chip-select" id="ni-chips">
+            <div class="chip" data-val="Alejandro" onclick="this.classList.toggle('selected')">Alejandro</div>
+            <div class="chip" data-val="Gerardo" onclick="this.classList.toggle('selected')">Gerardo</div>
+            <div class="chip" data-val="Ricardo" onclick="this.classList.toggle('selected')">Ricardo</div>
+            <div class="chip" data-val="Sergio" onclick="this.classList.toggle('selected')">Sergio</div>
+            <div class="chip" data-val="Todos" onclick="this.classList.toggle('selected')">Todos</div>
+          </div>
+        </div>
+        <div class="form-campo"><label>Fecha objetivo</label><input type="date" id="ni-fecha"></div>
+        <div class="form-campo full"><label>Descripción del compromiso</label>
+          <textarea id="ni-desc" placeholder="¿Qué se va a hacer?"></textarea>
+        </div>
+        <div class="form-campo full"><label>Notas</label>
+          <input type="text" id="ni-notas" placeholder="Contexto adicional...">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-intencion')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-intencion" onclick="guardarIntencionSuelta()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ACUERDO SUELTO -->
+<div class="modal-overlay" id="modal-acuerdo">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-titulo" id="modal-acuerdo-titulo">Nuevo acuerdo</div>
+      <button class="modal-close" onclick="cerrarModal('modal-acuerdo')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-campo full"><label>Responsables</label>
+          <div class="chip-select" id="na-chips">
+            <div class="chip" data-val="Alejandro" onclick="this.classList.toggle('selected')">Alejandro</div>
+            <div class="chip" data-val="Gerardo" onclick="this.classList.toggle('selected')">Gerardo</div>
+            <div class="chip" data-val="Ricardo" onclick="this.classList.toggle('selected')">Ricardo</div>
+            <div class="chip" data-val="Sergio" onclick="this.classList.toggle('selected')">Sergio</div>
+            <div class="chip" data-val="Todos" onclick="this.classList.toggle('selected')">Todos</div>
+          </div>
+        </div>
+        <div class="form-campo"><label>Fecha del acuerdo</label><input type="date" id="na-fecha"></div>
+        <div class="form-campo full"><label>Descripción del acuerdo</label>
+          <textarea id="na-desc" placeholder="¿Qué se acordó?"></textarea>
+        </div>
+        <div class="form-campo"><label>Categoría</label>
+          <select id="na-categoria">
+            <option value="Operación">Operación</option>
+            <option value="Finanzas">Finanzas</option>
+            <option value="Clientes">Clientes</option>
+            <option value="Proyectos">Proyectos</option>
+            <option value="Administración">Administración</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-acuerdo')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar-acuerdo" onclick="guardarAcuerdoSuelto()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SURL = 'https://ypmkuroqjhgidqpjhvtj.supabase.co';
+const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwbWt1cm9xamhnaWRxcGpodnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTk2MTcsImV4cCI6MjA5NTU3NTYxN30.4yhzqtKRlWJNMbxUyXnTonIicdh8Ose1geHI7wBQlws';
+const { createClient } = supabase;
+const db = createClient(SURL, SKEY);
+
+let juntas = [], intenciones = [], acuerdos = [];
+let filtroInt = 'todos', filtroAcu = 'todos';
+let editandoIntencionId = null, editandoAcuerdoId = null;
+let juntaActualId = null;
+
+const fmt = d => d ? new Date(d+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'}) : '—';
+const today = new Date().toISOString().split('T')[0];
+const now = new Date();
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show';
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function semaforo(fecha, estado) {
+  if (estado === 'completada') return 'sem-gris';
+  if (!fecha) return 'sem-gris';
+  const diff = (new Date(fecha+'T12:00:00') - now) / 86400000;
+  if (diff < 0) return 'sem-rojo';
+  if (diff <= 7) return 'sem-sol';
+  return 'sem-verde';
+}
+
+function estadoIntencion(fecha, estado) {
+  if (estado === 'completada') return 'completada';
+  if (!fecha) return 'ok';
+  const diff = (new Date(fecha+'T12:00:00') - now) / 86400000;
+  if (diff < 0) return 'vencida';
+  if (diff <= 7) return 'proxima';
+  return 'ok';
+}
+
+function respClass(r) {
+  const map = { Alejandro:'resp-alejandro', Gerardo:'resp-gerardo', Ricardo:'resp-ricardo', Sergio:'resp-sergio', Todos:'resp-todos' };
+  return map[r] || 'resp-todos';
+}
+
+// Devuelve el arreglo de responsables de una intención/acuerdo, con fallback
+// al campo singular viejo por si algún registro no fue migrado.
+function getResponsables(o) {
+  if (o.responsables && o.responsables.length) return o.responsables;
+  if (o.responsable) return [o.responsable];
+  return [];
+}
+
+function respBadges(o) {
+  const r = getResponsables(o);
+  if (!r.length) return `<span class="item-responsable badge resp-todos">—</span>`;
+  return r.map(x => `<span class="item-responsable badge ${respClass(x)}">${x}</span>`).join('');
+}
+
+// ── CHIPS (multi-select) ──
+function getChipSelected(containerId) {
+  return [...document.querySelectorAll('#'+containerId+' .chip.selected')].map(c => c.dataset.val);
+}
+function setChipSelected(containerId, selected) {
+  const sel = selected || [];
+  document.querySelectorAll('#'+containerId+' .chip').forEach(c => {
+    c.classList.toggle('selected', sel.includes(c.dataset.val));
+  });
+}
+function chipSelectHTML(id, selected) {
+  const sel = selected || [];
+  const socios = ['Alejandro','Gerardo','Ricardo','Sergio','Todos'];
+  return `<div class="chip-select" id="${id}">${socios.map(s =>
+    `<div class="chip ${sel.includes(s)?'selected':''}" data-val="${s}" onclick="this.classList.toggle('selected')">${s}</div>`
+  ).join('')}</div>`;
+}
+
+function catBadge(cat) {
+  const map = { Operación:'badge-azul', Finanzas:'badge-verde', Clientes:'badge-sol', Proyectos:'badge-azul', Administración:'badge-gris' };
+  return map[cat] || 'badge-gris';
+}
+
+// ── CARGAR DATOS ──
+async function cargarTodo() {
+  const [j, i, a] = await Promise.all([
+    db.from('eco_juntas').select('*').order('fecha', {ascending:false}),
+    db.from('eco_intenciones').select('*').order('fecha_objetivo', {ascending:true}),
+    db.from('eco_acuerdos').select('*').order('fecha_acuerdo', {ascending:false}),
+  ]);
+  juntas = j.data || [];
+  intenciones = i.data || [];
+  acuerdos = a.data || [];
+  document.getElementById('status-dot').className = 'status-dot ok';
+  document.getElementById('status-text').textContent = 'Conectado';
+  renderTodo();
+}
+
+function renderTodo() {
+  renderStats();
+  renderDashboard();
+  renderJuntas();
+  renderIntenciones();
+  renderAcuerdos();
+  if (juntaActualId && document.getElementById('vista-junta-detalle').classList.contains('active')) {
+    renderPendientesSeguimiento();
+    renderIntencionesJuntaDetalle();
+    renderAcuerdosJuntaDetalle();
+  }
+}
+
+// ── STATS ──
+function renderStats() {
+  const vencidas = intenciones.filter(i => estadoIntencion(i.fecha_objetivo, i.estado) === 'vencida').length;
+  const proximas = intenciones.filter(i => estadoIntencion(i.fecha_objetivo, i.estado) === 'proxima').length;
+  const pendientes = intenciones.filter(i => i.estado !== 'completada').length;
+  const completadas = intenciones.filter(i => i.estado === 'completada').length;
+
+  // Badge tab
+  const badge = document.getElementById('badge-vencidas');
+  if (vencidas > 0) { badge.textContent = vencidas; badge.classList.remove('hidden'); }
+  else { badge.classList.add('hidden'); }
+
+  document.getElementById('stats-strip').innerHTML = `
+    <div class="stat"><div class="stat-label">Intenciones vencidas</div><div class="stat-valor rojo">${vencidas}</div><div class="stat-sub">requieren atención</div></div>
+    <div class="stat"><div class="stat-label">Próximas a vencer</div><div class="stat-valor sol">${proximas}</div><div class="stat-sub">esta semana</div></div>
+    <div class="stat"><div class="stat-label">Pendientes total</div><div class="stat-valor">${pendientes}</div><div class="stat-sub">${completadas} completadas</div></div>
+    <div class="stat"><div class="stat-label">Juntas registradas</div><div class="stat-valor verde">${juntas.length}</div><div class="stat-sub">acuerdos: ${acuerdos.length}</div></div>`;
+}
+
+// ── DASHBOARD ──
+function renderDashboard() {
+  document.getElementById('dashboard-fecha').textContent = now.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
+  const hora = now.getHours();
+  const momento = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+  document.getElementById('dashboard-saludo').innerHTML = `${momento},<br><strong>equipo.</strong>`;
+
+  // Vencidas
+  const vencidas = intenciones.filter(i => estadoIntencion(i.fecha_objetivo, i.estado) === 'vencida');
+  const dvEl = document.getElementById('dash-vencidas');
+  if (vencidas.length === 0) {
+    dvEl.innerHTML = '<div style="background:var(--verde-claro);border:1px solid var(--verde);border-radius:12px;padding:14px 18px;font-size:13px;color:var(--verde);font-weight:500">✓ Sin intenciones vencidas</div>';
+  } else {
+    dvEl.innerHTML = vencidas.map(i => itemIntencionHTML(i)).join('');
+  }
+
+  // Próxima junta (martes siguiente)
+  const hoy = now.getDay();
+  const diasHastaMartes = (2 - hoy + 7) % 7 || 7;
+  const proximoMartes = new Date(now);
+  proximoMartes.setDate(now.getDate() + diasHastaMartes);
+  document.getElementById('dash-proxima-junta').innerHTML = `
+    <div class="card" style="border-left:3px solid var(--azul)">
+      <div class="card-header" style="cursor:default">
+        <div class="card-header-left">
+          <div><div class="card-fecha">Martes ${proximoMartes.toLocaleDateString('es-MX',{day:'numeric',month:'long'})}</div>
+          <div class="card-responsable">Junta semanal de dirección</div></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="abrirNuevaJunta()">Registrar junta</button>
+      </div>
+    </div>`;
+
+  // Última junta
+  const ultima = juntas[0];
+  const djEl = document.getElementById('dash-ultima-junta');
+  if (!ultima) { djEl.innerHTML = '<div class="empty">Sin juntas registradas aún.</div>'; return; }
+  const intJunta = intenciones.filter(i => i.junta_id === ultima.id);
+  const acuJunta = acuerdos.filter(a => a.junta_id === ultima.id);
+  djEl.innerHTML = `
+    <div class="card">
+      <div class="card-header" onclick="abrirJuntaDetalle(${ultima.id})">
+        <div class="card-header-left">
+          <span class="card-semana">SEM ${ultima.semana||'—'}</span>
+          <div><div class="card-fecha">${fmt(ultima.fecha)}</div>
+          <div class="card-responsable">Llevó: ${ultima.responsable||'—'}</div></div>
+          ${ultima.resumen?`<div class="card-resumen-preview">${ultima.resumen}</div>`:''}
+        </div>
+        <div class="card-badges">
+          ${intJunta.length>0?`<span class="badge badge-azul">${intJunta.length} intenciones</span>`:''}
+          ${acuJunta.length>0?`<span class="badge badge-gris">${acuJunta.length} acuerdos</span>`:''}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── JUNTAS ──
+function renderJuntas() {
+  const el = document.getElementById('lista-juntas');
+  if (!juntas.length) { el.innerHTML = '<div class="empty">Sin juntas registradas. Crea la primera.</div>'; return; }
+  el.innerHTML = juntas.map(j => {
+    const intJ = intenciones.filter(i => i.junta_id === j.id);
+    const acuJ = acuerdos.filter(a => a.junta_id === j.id);
+    return `<div class="card">
+      <div class="card-header" onclick="abrirJuntaDetalle(${j.id})">
+        <div class="card-header-left">
+          <span class="card-semana">SEM ${j.semana||'—'}</span>
+          <div><div class="card-fecha">${fmt(j.fecha)}</div>
+          <div class="card-responsable">Llevó: ${j.responsable||'—'}</div></div>
+          ${j.resumen?`<div class="card-resumen-preview">${j.resumen}</div>`:''}
+        </div>
+        <div class="card-badges">
+          ${intJ.length>0?`<span class="badge badge-azul">${intJ.length} intenciones</span>`:''}
+          ${acuJ.length>0?`<span class="badge badge-gris">${acuJ.length} acuerdos</span>`:''}
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();eliminarJunta(${j.id})">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── INTENCIONES ──
+function itemIntencionHTML(i) {
+  const est = estadoIntencion(i.fecha_objetivo, i.estado);
+  const sem = semaforo(i.fecha_objetivo, i.estado);
+  const esVencida = est === 'vencida';
+  const esProxima = est === 'proxima';
+  return `<div class="item ${est}">
+    <div class="item-semaforo ${sem}"></div>
+    <div class="item-content">
+      <div class="item-desc ${i.estado==='completada'?'':''}"><span style="${i.estado==='completada'?'text-decoration:line-through;':''}">${i.descripcion}</span></div>
+      <div class="item-meta">
+        ${respBadges(i)}
+        ${i.fecha_objetivo?`<span class="item-fecha ${esVencida?'vencida':''}">${esVencida?'⚠ Venció':'📅'} ${fmt(i.fecha_objetivo)}</span>`:''}
+      </div>
+      ${i.notas?`<div class="item-notas">${i.notas}</div>`:''}
+    </div>
+    <div class="item-actions">
+      ${i.estado!=='completada'?`<button class="btn-icon check" onclick="completarIntencion(${i.id})" title="Marcar completada">✓</button>`:''}
+      <button class="btn-icon edit" onclick="editarIntencion(${i.id})" title="Editar">✎</button>
+      <button class="btn-icon" onclick="eliminarIntencion(${i.id})" title="Eliminar">✕</button>
+    </div>
+  </div>`;
+}
+
+function renderIntenciones() {
+  let data = [...intenciones];
+  if (filtroInt !== 'todos') {
+    if (['Alejandro','Gerardo','Ricardo','Sergio'].includes(filtroInt)) {
+      data = data.filter(i => getResponsables(i).includes(filtroInt));
+    } else if (filtroInt === 'completada') {
+      data = data.filter(i => i.estado === 'completada');
+    } else {
+      data = data.filter(i => estadoIntencion(i.fecha_objetivo, i.estado) === filtroInt);
+    }
+  }
+  const el = document.getElementById('lista-intenciones');
+  if (!data.length) { el.innerHTML = '<div class="empty">Sin intenciones con este filtro.</div>'; return; }
+  el.innerHTML = data.map(i => itemIntencionHTML(i)).join('');
+}
+
+// ── ACUERDOS ──
+function itemAcuerdoHTML(a) {
+  return `<div class="item">
+    <div class="item-semaforo sem-gris"></div>
+    <div class="item-content">
+      <div class="item-desc">${a.descripcion}</div>
+      <div class="item-meta">
+        ${respBadges(a)}
+        ${a.fecha_acuerdo?`<span class="item-fecha">Acordado: ${fmt(a.fecha_acuerdo)}</span>`:''}
+        ${a.categoria?`<span class="badge ${catBadge(a.categoria)}">${a.categoria}</span>`:''}
+      </div>
+    </div>
+    <div class="item-actions">
+      <button class="btn-icon edit" onclick="editarAcuerdo(${a.id})" title="Editar">✎</button>
+      <button class="btn-icon" onclick="eliminarAcuerdo(${a.id})" title="Eliminar">✕</button>
+    </div>
+  </div>`;
+}
+
+function renderAcuerdos() {
+  let data = [...acuerdos];
+  if (filtroAcu !== 'todos' && ['Alejandro','Gerardo','Ricardo','Sergio'].includes(filtroAcu)) {
+    data = data.filter(a => getResponsables(a).includes(filtroAcu));
+  }
+  const el = document.getElementById('lista-acuerdos');
+  if (!data.length) { el.innerHTML = '<div class="empty">Sin acuerdos registrados.</div>'; return; }
+  el.innerHTML = data.map(a => itemAcuerdoHTML(a)).join('');
+}
+
+// ── NUEVA JUNTA / VISTA DETALLE ──
+function getSemana(dateStr) {
+  const d = new Date(dateStr+'T12:00:00');
+  const start = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil((((d - start) / 86400000) + start.getDay() + 1) / 7);
+}
+
+// Crea la junta de inmediato con datos mínimos y entra directo a su vista de
+// detalle — ahí se va llenando el resumen y agregando intenciones/acuerdos
+// sobre la marcha, sin tener que capturar todo de golpe en un modal.
+async function abrirNuevaJunta() {
+  const fecha = today;
+  const { data, error } = await db.from('eco_juntas').insert({
+    fecha, semana: getSemana(fecha), responsable: 'Alejandro', resumen: ''
+  }).select().single();
+  if (error) { showToast('Error al crear junta'); return; }
+  juntas.unshift(data);
+  abrirJuntaDetalle(data.id);
+}
+
+function abrirJuntaDetalle(id) {
+  juntaActualId = id;
+  document.getElementById('jd-form-intencion').innerHTML = '';
+  document.getElementById('jd-form-acuerdo').innerHTML = '';
+  renderJuntaDetalleHeader();
+  renderMetaForm();
+  renderPendientesSeguimiento();
+  renderIntencionesJuntaDetalle();
+  renderAcuerdosJuntaDetalle();
+  cambiarVista('junta-detalle', document.getElementById('tab-juntas'));
+}
+
+function renderJuntaDetalleHeader() {
+  const j = juntas.find(x => x.id === juntaActualId);
+  if (!j) return;
+  document.getElementById('jd-titulo').innerHTML = `<strong>SEM ${j.semana||'—'}</strong> · ${fmt(j.fecha)}`;
+  document.getElementById('jd-sub').textContent = `Llevó: ${j.responsable||'—'}`;
+}
+
+function renderMetaForm() {
+  const j = juntas.find(x => x.id === juntaActualId);
+  if (!j) return;
+  document.getElementById('jd-meta-form').innerHTML = `
+    <div class="form-campo"><label>Fecha</label><input type="date" id="jd-fecha" value="${j.fecha}" onchange="guardarMetaJunta()"></div>
+    <div class="form-campo"><label>Semana #</label><input type="number" id="jd-semana" value="${j.semana||''}" onchange="guardarMetaJunta()"></div>
+    <div class="form-campo"><label>Responsable de la sesión</label>
+      <select id="jd-responsable" onchange="guardarMetaJunta()">
+        ${['Alejandro','Gerardo','Ricardo','Sergio'].map(s => `<option value="${s}" ${j.responsable===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-campo full"><label>Resumen de la junta</label>
+      <textarea id="jd-resumen" onblur="guardarMetaJunta()" placeholder="¿Qué temas principales se tocaron en esta junta?">${j.resumen||''}</textarea>
+    </div>`;
+}
+
+async function guardarMetaJunta() {
+  const payload = {
+    fecha: document.getElementById('jd-fecha').value,
+    semana: parseInt(document.getElementById('jd-semana').value) || null,
+    responsable: document.getElementById('jd-responsable').value,
+    resumen: document.getElementById('jd-resumen').value,
+  };
+  const { error } = await db.from('eco_juntas').update(payload).eq('id', juntaActualId);
+  if (error) { showToast('Error al guardar'); return; }
+  const idx = juntas.findIndex(x => x.id === juntaActualId);
+  if (idx > -1) juntas[idx] = { ...juntas[idx], ...payload };
+  renderJuntaDetalleHeader();
+  renderJuntas();
+  renderDashboard();
+  showToast('Guardado ✓');
+}
+
+// Intenciones abiertas de TODAS las juntas — para dar seguimiento en vivo
+// durante la reunión, sin importar en qué junta se crearon originalmente.
+function renderPendientesSeguimiento() {
+  const abiertas = intenciones
+    .filter(i => i.estado !== 'completada')
+    .sort((a,b) => (a.fecha_objetivo||'9999-99-99') > (b.fecha_objetivo||'9999-99-99') ? 1 : -1);
+  const el = document.getElementById('jd-pendientes');
+  if (!abiertas.length) { el.innerHTML = '<div class="empty" style="padding:16px">Sin intenciones pendientes. Todo al día ✓</div>'; return; }
+  el.innerHTML = abiertas.map(i => itemIntencionHTML(i)).join('');
+}
+
+function renderIntencionesJuntaDetalle() {
+  const items = intenciones.filter(i => i.junta_id === juntaActualId);
+  const el = document.getElementById('jd-intenciones');
+  el.innerHTML = items.length ? items.map(i => itemIntencionHTML(i)).join('') : '<div class="empty" style="padding:16px">Sin intenciones agregadas en esta junta todavía.</div>';
+}
+
+function renderAcuerdosJuntaDetalle() {
+  const items = acuerdos.filter(a => a.junta_id === juntaActualId);
+  const el = document.getElementById('jd-acuerdos');
+  el.innerHTML = items.length ? items.map(a => itemAcuerdoHTML(a)).join('') : '<div class="empty" style="padding:16px">Sin acuerdos agregados en esta junta todavía.</div>';
+}
+
+// Formularios inline reales (nada de prompt()) para agregar items sobre la marcha
+function mostrarFormIntencionJunta() {
+  document.getElementById('jd-form-intencion').innerHTML = `
+    <div class="jd-inline-form">
+      <div class="form-grid">
+        <div class="form-campo full"><label>Responsables</label>${chipSelectHTML('jdi-chips')}</div>
+        <div class="form-campo"><label>Fecha objetivo</label><input type="date" id="jdi-fecha"></div>
+        <div class="form-campo full"><label>Descripción del compromiso</label><textarea id="jdi-desc" placeholder="¿Qué se va a hacer?"></textarea></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('jd-form-intencion').innerHTML=''">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="guardarIntencionJunta()">Guardar</button>
+      </div>
+    </div>`;
+}
+
+async function guardarIntencionJunta() {
+  const desc = document.getElementById('jdi-desc').value.trim();
+  const resp = getChipSelected('jdi-chips');
+  if (!desc) { showToast('La descripción es obligatoria'); return; }
+  if (!resp.length) { showToast('Selecciona al menos un responsable'); return; }
+  const payload = {
+    responsables: resp,
+    descripcion: desc,
+    fecha_objetivo: document.getElementById('jdi-fecha').value || null,
+    estado: 'pendiente',
+    junta_id: juntaActualId,
+  };
+  const { data, error } = await db.from('eco_intenciones').insert(payload).select().single();
+  if (error) { showToast('Error al guardar'); return; }
+  intenciones.unshift(data);
+  document.getElementById('jd-form-intencion').innerHTML = '';
+  showToast('Intención agregada ✓');
+  renderIntencionesJuntaDetalle();
+  renderPendientesSeguimiento();
+  renderStats();
+  renderJuntas();
+}
+
+function mostrarFormAcuerdoJunta() {
+  document.getElementById('jd-form-acuerdo').innerHTML = `
+    <div class="jd-inline-form">
+      <div class="form-grid">
+        <div class="form-campo full"><label>Responsables</label>${chipSelectHTML('jda-chips', ['Todos'])}</div>
+        <div class="form-campo"><label>Categoría</label>
+          <select id="jda-categoria">
+            <option value="Operación">Operación</option>
+            <option value="Finanzas">Finanzas</option>
+            <option value="Clientes">Clientes</option>
+            <option value="Proyectos">Proyectos</option>
+            <option value="Administración">Administración</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="form-campo full"><label>Descripción del acuerdo</label><textarea id="jda-desc" placeholder="¿Qué se acordó?"></textarea></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('jd-form-acuerdo').innerHTML=''">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="guardarAcuerdoJunta()">Guardar</button>
+      </div>
+    </div>`;
+}
+
+async function guardarAcuerdoJunta() {
+  const desc = document.getElementById('jda-desc').value.trim();
+  const resp = getChipSelected('jda-chips');
+  if (!desc) { showToast('La descripción es obligatoria'); return; }
+  if (!resp.length) { showToast('Selecciona al menos un responsable'); return; }
+  const j = juntas.find(x => x.id === juntaActualId);
+  const payload = {
+    responsables: resp,
+    descripcion: desc,
+    categoria: document.getElementById('jda-categoria').value,
+    fecha_acuerdo: (j && j.fecha) || today,
+    junta_id: juntaActualId,
+  };
+  const { data, error } = await db.from('eco_acuerdos').insert(payload).select().single();
+  if (error) { showToast('Error al guardar'); return; }
+  acuerdos.unshift(data);
+  document.getElementById('jd-form-acuerdo').innerHTML = '';
+  showToast('Acuerdo agregado ✓');
+  renderAcuerdosJuntaDetalle();
+  renderStats();
+  renderJuntas();
+}
+
+async function eliminarJuntaDetalle() {
+  if (!confirm('¿Eliminar esta junta y todos sus items?')) return;
+  await eliminarJuntaSilenciosa(juntaActualId);
+  juntaActualId = null;
+  showToast('Junta eliminada');
+  await cargarTodo();
+  cambiarVista('juntas', document.getElementById('tab-juntas'));
+}
+
+// ── INTENCIÓN SUELTA ──
+function abrirNuevaIntencion() {
+  editandoIntencionId = null;
+  document.getElementById('modal-intencion-titulo').textContent = 'Nueva intención';
+  document.getElementById('btn-guardar-intencion').textContent = 'Guardar';
+  document.getElementById('ni-fecha').value = '';
+  document.getElementById('ni-desc').value = '';
+  document.getElementById('ni-notas').value = '';
+  setChipSelected('ni-chips', ['Alejandro']);
+  document.getElementById('modal-intencion').classList.add('open');
+}
+
+function editarIntencion(id) {
+  const i = intenciones.find(x => x.id === id);
+  if (!i) return;
+  editandoIntencionId = id;
+  document.getElementById('modal-intencion-titulo').textContent = 'Editar intención';
+  document.getElementById('btn-guardar-intencion').textContent = 'Actualizar';
+  setChipSelected('ni-chips', getResponsables(i));
+  document.getElementById('ni-fecha').value = i.fecha_objetivo || '';
+  document.getElementById('ni-desc').value = i.descripcion || '';
+  document.getElementById('ni-notas').value = i.notas || '';
+  document.getElementById('modal-intencion').classList.add('open');
+}
+
+async function guardarIntencionSuelta() {
+  const desc = document.getElementById('ni-desc').value.trim();
+  const resp = getChipSelected('ni-chips');
+  if (!desc) { showToast('La descripción es obligatoria'); return; }
+  if (!resp.length) { showToast('Selecciona al menos un responsable'); return; }
+  const payload = {
+    responsables: resp,
+    descripcion: desc,
+    fecha_objetivo: document.getElementById('ni-fecha').value || null,
+    notas: document.getElementById('ni-notas').value,
+  };
+  let error;
+  if (editandoIntencionId) {
+    ({ error } = await db.from('eco_intenciones').update(payload).eq('id', editandoIntencionId));
+    if (!error) showToast('Intención actualizada ✓');
+  } else {
+    ({ error } = await db.from('eco_intenciones').insert({ ...payload, estado: 'pendiente' }));
+    if (!error) showToast('Intención guardada ✓');
+  }
+  if (error) { showToast('Error al guardar'); return; }
+  editandoIntencionId = null;
+  cerrarModal('modal-intencion');
+  await cargarTodo();
+}
+
+// ── ACUERDO SUELTO ──
+function abrirNuevoAcuerdo() {
+  editandoAcuerdoId = null;
+  document.getElementById('modal-acuerdo-titulo').textContent = 'Nuevo acuerdo';
+  document.getElementById('btn-guardar-acuerdo').textContent = 'Guardar';
+  document.getElementById('na-fecha').value = today;
+  document.getElementById('na-desc').value = '';
+  setChipSelected('na-chips', ['Todos']);
+  document.getElementById('na-categoria').value = 'Operación';
+  document.getElementById('modal-acuerdo').classList.add('open');
+}
+
+function editarAcuerdo(id) {
+  const a = acuerdos.find(x => x.id === id);
+  if (!a) return;
+  editandoAcuerdoId = id;
+  document.getElementById('modal-acuerdo-titulo').textContent = 'Editar acuerdo';
+  document.getElementById('btn-guardar-acuerdo').textContent = 'Actualizar';
+  setChipSelected('na-chips', getResponsables(a));
+  document.getElementById('na-fecha').value = a.fecha_acuerdo || today;
+  document.getElementById('na-desc').value = a.descripcion || '';
+  document.getElementById('na-categoria').value = a.categoria || 'Operación';
+  document.getElementById('modal-acuerdo').classList.add('open');
+}
+
+async function guardarAcuerdoSuelto() {
+  const desc = document.getElementById('na-desc').value.trim();
+  const resp = getChipSelected('na-chips');
+  if (!desc) { showToast('La descripción es obligatoria'); return; }
+  if (!resp.length) { showToast('Selecciona al menos un responsable'); return; }
+  const payload = {
+    responsables: resp,
+    descripcion: desc,
+    fecha_acuerdo: document.getElementById('na-fecha').value || today,
+    categoria: document.getElementById('na-categoria').value,
+  };
+  let error;
+  if (editandoAcuerdoId) {
+    ({ error } = await db.from('eco_acuerdos').update(payload).eq('id', editandoAcuerdoId));
+    if (!error) showToast('Acuerdo actualizado ✓');
+  } else {
+    ({ error } = await db.from('eco_acuerdos').insert(payload));
+    if (!error) showToast('Acuerdo guardado ✓');
+  }
+  if (error) { showToast('Error al guardar'); return; }
+  editandoAcuerdoId = null;
+  cerrarModal('modal-acuerdo');
+  await cargarTodo();
+}
+
+// ── ACCIONES ──
+async function completarIntencion(id) {
+  await db.from('eco_intenciones').update({ estado: 'completada' }).eq('id', id);
+  showToast('Intención completada ✓');
+  await cargarTodo();
+}
+
+async function eliminarIntencion(id) {
+  if (!confirm('¿Eliminar esta intención?')) return;
+  await db.from('eco_intenciones').delete().eq('id', id);
+  showToast('Eliminada');
+  await cargarTodo();
+}
+
+async function eliminarAcuerdo(id) {
+  if (!confirm('¿Eliminar este acuerdo?')) return;
+  await db.from('eco_acuerdos').delete().eq('id', id);
+  showToast('Eliminado');
+  await cargarTodo();
+}
+
+async function eliminarJuntaSilenciosa(id) {
+  await db.from('eco_intenciones').delete().eq('junta_id', id);
+  await db.from('eco_acuerdos').delete().eq('junta_id', id);
+  await db.from('eco_juntas').delete().eq('id', id);
+}
+
+async function eliminarJunta(id) {
+  if (!confirm('¿Eliminar esta junta y todos sus items?')) return;
+  await eliminarJuntaSilenciosa(id);
+  showToast('Junta eliminada');
+  await cargarTodo();
+}
+
+// ── FILTROS ──
+function filtrarIntenciones(f, el) {
+  filtroInt = f;
+  document.querySelectorAll('#filtros-intenciones .filtro').forEach(x => x.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderIntenciones();
+}
+
+function filtrarAcuerdos(f, el) {
+  filtroAcu = f;
+  document.querySelectorAll('#filtros-acuerdos .filtro').forEach(x => x.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderAcuerdos();
+}
+
+// ── NAVEGACIÓN ──
+function cambiarVista(vista, tab) {
+  document.querySelectorAll('.vista').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('vista-'+vista).classList.add('active');
+  if (tab) tab.classList.add('active');
+}
+
+function toggleCard(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+// INIT
+cargarTodo().catch(() => {
+  document.getElementById('status-text').textContent = 'Sin conexión';
+});
+</script>
+</body>
+</html>

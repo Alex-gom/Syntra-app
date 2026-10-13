@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syntra — Mi agenda</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f7;--blanco:#fff;--texto:#1d1d1f;--suave:#6e6e73;--borde:#d2d2d7;
+  --verde:#1d6f42;--vc:#e8f5ee;--azul:#0066cc;--ac:#e8f0fb;
+  --rojo:#c0392b;--rc:#fdecea;--sol:#f5a623;--sc:#fdf3e0;--gris:#8e8e93;
+  --morado:#6b21a8;--mc:#f3e8ff;
+}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--texto);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ── PANTALLA SELECCIÓN ── */
+#p-seleccion{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px 24px}
+.sel-logo{font-size:22px;font-weight:600;letter-spacing:5px;margin-bottom:8px}
+.sel-sub{font-size:14px;color:var(--suave);margin-bottom:48px}
+.sel-titulo{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--suave);margin-bottom:16px;align-self:flex-start;width:100%;max-width:420px}
+.sel-grid{display:flex;flex-direction:column;gap:10px;width:100%;max-width:420px}
+.sel-card{background:var(--blanco);border:1.5px solid var(--borde);border-radius:16px;padding:18px 20px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:.15s all}
+.sel-card:hover{border-color:var(--verde);box-shadow:0 4px 16px rgba(29,111,66,.1);transform:translateY(-1px)}
+.sel-av{width:44px;height:44px;border-radius:50%;background:var(--vc);border:2px solid var(--verde);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;color:var(--verde);flex-shrink:0}
+.sel-nombre{font-size:15px;font-weight:500}
+.sel-meta{font-size:12px;color:var(--suave);margin-top:2px}
+.sel-arrow{margin-left:auto;color:var(--borde);font-size:18px}
+.sel-loading{color:var(--suave);font-size:14px}
+
+/* ── PANTALLA PERSONAL ── */
+#p-personal{display:none;min-height:100vh}
+nav{background:rgba(245,245,247,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--borde);height:52px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-izq{display:flex;align-items:center;gap:10px}
+.nav-logo{font-size:15px;font-weight:600;letter-spacing:4px}
+.nav-nombre{font-size:13px;color:var(--suave)}
+.btn-salir{font-size:12px;color:var(--suave);background:none;border:1px solid var(--borde);border-radius:8px;padding:5px 12px;cursor:pointer;font-family:inherit}
+.btn-salir:hover{background:var(--bg)}
+
+.wrap{max-width:680px;margin:0 auto;padding:20px 20px}
+
+/* HOY */
+.hoy-card{background:var(--blanco);border-radius:18px;border:1px solid var(--borde);padding:22px 24px;margin-bottom:20px;display:flex;align-items:center;gap:20px}
+.hoy-fecha-num{font-size:44px;font-weight:200;letter-spacing:-2px;line-height:1;color:var(--texto)}
+.hoy-sep{width:1px;height:52px;background:var(--borde)}
+.hoy-info{flex:1}
+.hoy-dia-txt{font-size:13px;color:var(--suave);margin-bottom:6px}
+.hoy-trabajos-hoy{font-size:15px;font-weight:500}
+
+/* SECCIÓN */
+.sec-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--suave);margin-bottom:12px;margin-top:24px}
+
+/* TRABAJO CARD */
+.trabajo-card{background:var(--blanco);border-radius:14px;border:1px solid var(--borde);padding:16px 18px;margin-bottom:10px;cursor:pointer;transition:.15s all}
+.trabajo-card:hover{border-color:#b5b5ba;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.tc-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.tc-tit{font-size:15px;font-weight:500}
+.badges{display:flex;gap:6px;flex-wrap:wrap}
+.badge{font-size:11px;font-weight:500;padding:3px 8px;border-radius:6px;display:inline-block}
+.b-inst{background:var(--vc);color:var(--verde)}
+.b-mant{background:var(--ac);color:var(--azul)}
+.b-corr{background:var(--rc);color:var(--rojo)}
+.b-bloq{background:var(--bg);color:var(--gris);border:1px solid var(--borde)}
+.b-lev{background:var(--mc);color:var(--morado)}
+.b-pend{background:var(--sc);color:#8b5e00}
+.b-proc{background:var(--ac);color:var(--azul)}
+.b-comp{background:var(--vc);color:var(--verde)}
+.tc-meta{font-size:12px;color:var(--suave);display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.tc-compas{display:flex;align-items:center;gap:6px;margin-top:8px}
+/* progress bar estado */
+.estado-bar{display:flex;gap:0;border-radius:8px;overflow:hidden;height:6px;flex:1;background:var(--bg)}
+.estado-seg{flex:1;border-right:2px solid var(--bg)}
+.estado-seg:last-child{border-right:none}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.modal{background:var(--blanco);border-radius:20px 20px 0 0;width:100%;max-width:540px;max-height:88vh;overflow-y:auto}
+.m-hdr{padding:18px 22px;border-bottom:1px solid var(--borde);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--blanco);z-index:1}
+.m-tit{font-size:17px;font-weight:600}
+.m-x{width:28px;height:28px;border-radius:50%;background:var(--bg);border:none;cursor:pointer;font-size:14px;color:var(--suave)}
+.m-body{padding:20px 22px}
+.m-ftr{padding:14px 22px;border-top:1px solid var(--borde);display:flex;gap:8px;position:sticky;bottom:0;background:var(--blanco)}
+.det-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.det-item{background:var(--bg);border-radius:10px;padding:12px 14px}
+.det-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--suave);margin-bottom:4px}
+.det-val{font-size:14px}
+.btn{padding:9px 18px;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:.15s all;flex:1;text-align:center}
+.btn-pend{background:var(--sc);color:#8b5e00}.btn-pend:hover{background:#f0e0b0}
+.btn-proc{background:var(--ac);color:var(--azul)}.btn-proc:hover{background:#c8dcf5}
+.btn-comp{background:var(--vc);color:var(--verde)}.btn-comp:hover{background:#c0e8ce}
+.btn-s{background:transparent;color:var(--texto);border:1px solid var(--borde);flex:none;padding:9px 14px}.btn-s:hover{background:var(--bg)}
+.notas-box{background:var(--bg);border-radius:10px;padding:14px;font-size:13px;color:var(--suave);margin-top:12px;white-space:pre-wrap}
+.pill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500}
+.pill-g{background:var(--vc);border:1px solid var(--verde);color:var(--verde)}
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;padding:11px 22px;border-radius:20px;font-size:14px;z-index:999;display:none;white-space:nowrap}
+.toast.show{display:block}
+.empty{text-align:center;padding:40px 20px;color:var(--suave);font-size:14px}
+@media(max-width:480px){.hoy-fecha-num{font-size:36px}.det-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ══ PANTALLA 1: SELECCIÓN ══════════════════════════ -->
+<div id="p-seleccion">
+  <div class="sel-logo">SYNTRA</div>
+  <div class="sel-sub">¿Quién eres?</div>
+  <div class="sel-titulo">Selecciona tu nombre</div>
+  <div class="sel-grid" id="sel-grid">
+    <div class="sel-loading">Cargando equipo…</div>
+  </div>
+</div>
+
+<!-- ══ PANTALLA 2: PERSONAL ═══════════════════════════ -->
+<div id="p-personal">
+  <nav>
+    <div class="nav-izq">
+      <div class="nav-logo">SYNTRA</div>
+      <span style="color:var(--borde)">|</span>
+      <span class="nav-nombre" id="nav-nombre"></span>
+    </div>
+    <button class="btn-salir" onclick="salir()">Cambiar ›</button>
+  </nav>
+
+  <div class="wrap">
+    <!-- HOY -->
+    <div class="hoy-card" id="hoy-card">
+      <div class="hoy-fecha-num" id="hoy-num"></div>
+      <div class="hoy-sep"></div>
+      <div class="hoy-info">
+        <div class="hoy-dia-txt" id="hoy-dia-txt"></div>
+        <div class="hoy-trabajos-hoy" id="hoy-msg"></div>
+      </div>
+    </div>
+
+    <!-- HOY trabajos -->
+    <div id="sec-hoy-wrap" style="display:none">
+      <div class="sec-lbl">Hoy en campo</div>
+      <div id="lista-hoy"></div>
+    </div>
+
+    <!-- PRÓXIMOS -->
+    <div class="sec-lbl">Próximos trabajos</div>
+    <div id="lista-proximos"></div>
+
+    <!-- COMPLETADOS -->
+    <div id="sec-comp-wrap" style="display:none">
+      <div class="sec-lbl" style="margin-top:32px">Completados recientes</div>
+      <div id="lista-comp"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="overlay" id="m-det">
+  <div class="modal">
+    <div class="m-hdr">
+      <div class="m-tit" id="md-tit"></div>
+      <button class="m-x" onclick="cerrar()">✕</button>
+    </div>
+    <div class="m-body" id="md-body"></div>
+    <div class="m-ftr" id="md-ftr"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const db = supabase.createClient(
+  'https://ypmkuroqjhgidqpjhvtj.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwbWt1cm9xamhnaWRxcGpodnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTk2MTcsImV4cCI6MjA5NTU3NTYxN30.4yhzqtKRlWJNMbxUyXnTonIicdh8Ose1geHI7wBQlws'
+);
+
+let trabajadores=[], trabajos=[], asigs=[];
+let yoId=null, yoNombre='';
+let detalleId=null;
+
+const TIPO_LBL={instalacion:'Instalación',mantenimiento:'Mantenimiento',correccion:'Corrección',bloqueo:'Bloqueo',levantamiento:'Levantamiento'};
+const TIPO_CLS={instalacion:'b-inst',mantenimiento:'b-mant',correccion:'b-corr',bloqueo:'b-bloq',levantamiento:'b-lev'};
+const EST_LBL={pendiente:'Pendiente',en_proceso:'En proceso',completado:'Completado'};
+const EST_CLS={pendiente:'b-pend',en_proceso:'b-proc',completado:'b-comp'};
+const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const MESES_CORTO=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+function toast(m,err){
+  const t=document.getElementById('toast');
+  t.textContent=m; t.style.background=err?'#c0392b':'rgba(0,0,0,.85)';
+  t.className='toast show'; setTimeout(()=>t.className='toast',3000);
+}
+function cerrar(){document.getElementById('m-det').classList.remove('open')}
+
+function fmt(d){
+  if(!d)return'—';
+  const f=new Date(d+'T12:00');
+  return f.getDate()+' '+MESES_CORTO[f.getMonth()];
+}
+
+// ── CARGA INICIAL ─────────────────────────────
+async function init(){
+  const [a,b,c]=await Promise.all([
+    db.from('trabajadores').select('*').eq('activo',true).order('nombre'),
+    db.from('trabajos').select('*').order('fecha_inicio'),
+    db.from('trabajos_trabajadores').select('*'),
+  ]);
+  trabajadores=a.data||[]; trabajos=b.data||[]; asigs=c.data||[];
+
+  const grid=document.getElementById('sel-grid');
+  if(!trabajadores.length){
+    grid.innerHTML='<div class="sel-loading">No hay trabajadores registrados aún.</div>';
+    return;
+  }
+  grid.innerHTML=trabajadores.map(w=>{
+    const n=asigs.filter(a=>a.trabajador_id===w.id&&
+      trabajos.find(t=>Number(t.id)===Number(a.trabajo_id)&&t.estado!=='completado')).length;
+    return `<div class="sel-card" onclick="elegir(${w.id},'${w.nombre.replace(/'/g,"\\'")}')">
+      <div class="sel-av">${w.nombre.charAt(0).toUpperCase()}</div>
+      <div>
+        <div class="sel-nombre">${w.nombre}</div>
+        <div class="sel-meta">${n} trabajo${n!==1?'s':''} pendiente${n!==1?'s':''}</div>
+      </div>
+      <div class="sel-arrow">›</div>
+    </div>`;
+  }).join('');
+}
+
+// ── ELEGIR TRABAJADOR ─────────────────────────
+function elegir(id,nombre){
+  yoId=id; yoNombre=nombre;
+  document.getElementById('nav-nombre').textContent=nombre;
+  document.getElementById('p-seleccion').style.display='none';
+  document.getElementById('p-personal').style.display='block';
+  renderPersonal();
+}
+
+function salir(){
+  yoId=null; yoNombre='';
+  document.getElementById('p-personal').style.display='none';
+  document.getElementById('p-seleccion').style.display='flex';
+  init(); // refrescar conteos
+}
+
+// ── RENDER PERSONAL ───────────────────────────
+function renderPersonal(){
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  const hoyStr=hoy.toISOString().split('T')[0];
+
+  // mis trabajos
+  const misIds=asigs.filter(a=>a.trabajador_id===yoId).map(a=>Number(a.trabajo_id));
+  const misTrab=trabajos.filter(t=>misIds.includes(Number(t.id)));
+
+  // HOY strip
+  document.getElementById('hoy-num').textContent=hoy.getDate();
+  document.getElementById('hoy-dia-txt').textContent=DIAS[hoy.getDay()]+', '+
+    hoy.toLocaleDateString('es-MX',{month:'long',year:'numeric'});
+
+  const trabHoy=misTrab.filter(t=>hoyStr>=t.fecha_inicio&&hoyStr<=(t.fecha_fin||t.fecha_inicio)&&t.estado!=='completado');
+  if(trabHoy.length){
+    document.getElementById('hoy-msg').textContent=trabHoy.length+' trabajo'+( trabHoy.length!==1?'s':'')+' hoy';
+    document.getElementById('hoy-card').style.borderColor='var(--verde)';
+    document.getElementById('sec-hoy-wrap').style.display='block';
+    document.getElementById('lista-hoy').innerHTML=trabHoy.map(t=>cardHTML(t)).join('');
+  }else{
+    document.getElementById('hoy-msg').textContent='Sin trabajos programados hoy';
+    document.getElementById('sec-hoy-wrap').style.display='none';
+  }
+
+  // PRÓXIMOS (no completados, no hoy, fecha_inicio >= hoy)
+  const proximos=misTrab
+    .filter(t=>t.estado!=='completado'&&t.fecha_inicio>hoyStr)
+    .sort((a,b)=>a.fecha_inicio.localeCompare(b.fecha_inicio));
+
+  // PENDIENTES/EN PROCESO sin fecha futura (fecha ya pasó o no hay fecha)
+  const enProceso=misTrab
+    .filter(t=>t.estado!=='completado'&&t.fecha_inicio<=hoyStr&&!trabHoy.find(x=>x.id===t.id))
+    .sort((a,b)=>a.fecha_inicio.localeCompare(b.fecha_inicio));
+
+  const todosProximos=[...enProceso,...proximos];
+  const listaProx=document.getElementById('lista-proximos');
+  if(!todosProximos.length){
+    listaProx.innerHTML='<div class="empty">¡Todo al día! Sin trabajos pendientes.</div>';
+  }else{
+    listaProx.innerHTML=todosProximos.map(t=>cardHTML(t)).join('');
+  }
+
+  // COMPLETADOS recientes (últimos 5)
+  const comp=misTrab.filter(t=>t.estado==='completado')
+    .sort((a,b)=>b.fecha_inicio.localeCompare(a.fecha_inicio)).slice(0,5);
+  if(comp.length){
+    document.getElementById('sec-comp-wrap').style.display='block';
+    document.getElementById('lista-comp').innerHTML=comp.map(t=>cardHTML(t,true)).join('');
+  }else{
+    document.getElementById('sec-comp-wrap').style.display='none';
+  }
+}
+
+function cardHTML(t,opaco){
+  const eq=asigs.filter(a=>Number(a.trabajo_id)===Number(t.id))
+    .map(a=>trabajadores.find(w=>w.id===a.trabajador_id)?.nombre).filter(Boolean);
+  return `<div class="trabajo-card${opaco?' opacity:0.6':''}" onclick="verDetalle(${t.id})" style="${opaco?'opacity:.65':''}">
+    <div class="tc-hdr">
+      <div class="tc-tit">${t.titulo}</div>
+      <div class="badges">
+        <span class="badge ${TIPO_CLS[t.tipo]}">${TIPO_LBL[t.tipo]}</span>
+        <span class="badge ${EST_CLS[t.estado]}">${EST_LBL[t.estado]}</span>
+      </div>
+    </div>
+    <div class="tc-meta">
+      <span>📅 ${fmt(t.fecha_inicio)}${t.fecha_fin&&t.fecha_fin!==t.fecha_inicio?' → '+fmt(t.fecha_fin):''}</span>
+      ${t.cliente_nombre?`<span>📍 ${t.cliente_nombre}</span>`:''}
+      ${eq.length>1?`<span>👷 ${eq.filter(n=>n!==yoNombre).join(', ')} también</span>`:''}
+    </div>
+    ${t.paneles?`<div style="font-size:11px;color:var(--suave);margin-top:4px">🔆 ${t.paneles}${t.panel_w?' ×'+t.panel_w+'W':''} pan.${t.inversor?' · '+(t.inv_cant||1)+'× '+t.inversor:''}${t.bateria_modelo?' · '+(t.bat_cant||1)+'× '+t.bateria_modelo:''}</div>`:''}
+  </div>`;
+}
+
+// ── DETALLE ───────────────────────────────────
+function verDetalle(id){
+  const t=trabajos.find(x=>Number(x.id)===Number(id));
+  if(!t)return;
+  detalleId=id;
+  const eq=asigs.filter(a=>Number(a.trabajo_id)===Number(id))
+    .map(a=>trabajadores.find(w=>w.id===a.trabajador_id)?.nombre).filter(Boolean);
+
+  document.getElementById('md-tit').textContent=t.titulo;
+  document.getElementById('md-body').innerHTML=`
+    <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+      <span class="badge ${TIPO_CLS[t.tipo]}">${TIPO_LBL[t.tipo]}</span>
+      <span class="badge ${EST_CLS[t.estado]}">${EST_LBL[t.estado]}</span>
+    </div>
+    <div class="det-grid">
+      <div class="det-item"><div class="det-lbl">Inicio</div><div class="det-val">${fmt(t.fecha_inicio)}</div></div>
+      <div class="det-item"><div class="det-lbl">Fin</div><div class="det-val">${fmt(t.fecha_fin||t.fecha_inicio)}</div></div>
+      ${t.cliente_nombre?`<div class="det-item" style="grid-column:1/-1"><div class="det-lbl">Cliente / Ubicación</div><div class="det-val">${t.cliente_nombre}</div></div>`:''}
+      ${t.paneles?`<div class="det-item"><div class="det-lbl">Paneles</div><div class="det-val">${t.paneles}${t.panel_w?' × '+t.panel_w+' W':''}</div></div>`:''}
+      ${t.inversor?`<div class="det-item"><div class="det-lbl">Inversor</div><div class="det-val">${t.inv_cant?t.inv_cant+'× ':''} ${t.inversor}</div></div>`:''}
+      ${t.bateria_modelo?`<div class="det-item" style="grid-column:1/-1"><div class="det-lbl">Batería</div><div class="det-val">${t.bat_cant?t.bat_cant+'× ':''} ${t.bateria_modelo}</div></div>`:''}
+    </div>
+    ${eq.length?`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:var(--suave);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Equipo en este trabajo</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">${eq.map(n=>`<span class="pill pill-g${n===yoNombre?' '+'font-weight:600':''}">${n===yoNombre?'👤 ':''} ${n}</span>`).join('')}</div></div>`:''}
+    ${t.notas?`<div class="notas-box">📝 ${t.notas}</div>`:''}`;
+
+  // botones de estado
+  const ftr=document.getElementById('md-ftr');
+  if(t.estado==='completado'){
+    ftr.innerHTML=`<button class="btn btn-s" onclick="cerrar()">Cerrar</button>`;
+  }else{
+    const btns=[];
+    if(t.estado!=='pendiente')   btns.push(`<button class="btn btn-pend" onclick="cambiarEstado('pendiente')">← Pendiente</button>`);
+    if(t.estado!=='en_proceso')  btns.push(`<button class="btn btn-proc" onclick="cambiarEstado('en_proceso')">En proceso</button>`);
+    if(t.estado!=='completado')  btns.push(`<button class="btn btn-comp" onclick="cambiarEstado('completado')">✓ Completado</button>`);
+    ftr.innerHTML=`<button class="btn btn-s" onclick="cerrar()">Cerrar</button>${btns.join('')}`;
+  }
+
+  document.getElementById('m-det').classList.add('open');
+}
+
+async function cambiarEstado(nuevoEstado){
+  const {error}=await db.from('trabajos').update({estado:nuevoEstado}).eq('id',detalleId);
+  if(error){toast('Error: '+error.message,true);return}
+  // actualizar local
+  const t=trabajos.find(x=>Number(x.id)===Number(detalleId));
+  if(t)t.estado=nuevoEstado;
+  cerrar();
+  toast(nuevoEstado==='completado'?'¡Trabajo completado! ✓':'Estado actualizado');
+  renderPersonal();
+}
+
+init();
+</script>
+</body>
+</html>

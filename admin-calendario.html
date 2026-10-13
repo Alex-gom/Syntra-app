@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syntra — Admin</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f7;--blanco:#fff;--texto:#1d1d1f;--suave:#6e6e73;--borde:#d2d2d7;
+  --verde:#1d6f42;--vc:#e8f5ee;
+  --azul:#0066cc;--ac:#e8f0fb;
+  --rojo:#c0392b;--rc:#fdecea;
+  --sol:#f5a623;--sc:#fdf3e0;
+  --gris:#8e8e93;
+  --morado:#6b21a8;--mc:#f3e8ff;
+  --naranja:#c2410c;--nc:#fff0e6;
+}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--texto);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* NAV */
+nav{background:rgba(245,245,247,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--borde);height:54px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-l{display:flex;align-items:center;gap:10px}
+.logo{font-size:16px;font-weight:600;letter-spacing:4px}
+.badge-admin{font-size:10px;font-weight:600;background:#1d1d1f;color:#fff;border-radius:5px;padding:2px 7px;letter-spacing:.5px}
+.conn{font-size:12px;font-weight:500;color:var(--suave)}
+.conn.ok{color:#34c759}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--borde);background:var(--blanco);padding:0 24px;overflow-x:auto}
+.tab{padding:12px 16px;font-size:13px;font-weight:500;color:var(--suave);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0}
+.tab.on{color:var(--texto);border-bottom-color:var(--texto)}
+.pending-count{background:var(--rojo);color:#fff;border-radius:10px;font-size:10px;font-weight:600;padding:1px 6px;margin-left:6px;vertical-align:middle}
+
+/* WRAP */
+.wrap{max-width:1100px;margin:0 auto;padding:20px 24px}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:.15s all}
+.btn-p{background:var(--verde);color:#fff}.btn-p:hover{background:#155c33}
+.btn-a{background:#1d1d1f;color:#fff}.btn-a:hover{background:#333}
+.btn-s{background:transparent;color:var(--texto);border:1px solid var(--borde)}.btn-s:hover{background:var(--bg)}
+.btn-r{background:var(--rc);color:var(--rojo);border:1px solid var(--rojo)}.btn-r:hover{background:#f5c6c2}
+.btn-sm{padding:5px 12px;font-size:12px}
+
+/* BADGES */
+.badge{font-size:11px;font-weight:500;padding:3px 8px;border-radius:6px;display:inline-block}
+.b-inst{background:var(--vc);color:var(--verde)}
+.b-mant{background:var(--ac);color:var(--azul)}
+.b-corr{background:var(--rc);color:var(--rojo)}
+.b-bloq{background:var(--bg);color:var(--gris);border:1px solid var(--borde)}
+.b-lev{background:var(--mc);color:var(--morado)}
+.b-venta{background:var(--nc);color:var(--naranja)}
+.b-pend{background:var(--sc);color:#8b5e00}
+.b-proc{background:var(--ac);color:var(--azul)}
+.b-comp{background:var(--vc);color:var(--verde)}
+
+/* CALENDARIO */
+.cal-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.cal-mes{font-size:20px;font-weight:300;min-width:180px}
+.nav-btn{width:32px;height:32px;border-radius:50%;border:1px solid var(--borde);background:var(--blanco);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.nav-btn:hover{background:var(--bg)}
+.filtros{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.fil-btn{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid var(--borde);background:var(--bg);color:var(--suave);transition:.12s all}
+.fil-btn.on{color:#fff}
+.fil-btn.f-ops.on{background:var(--verde);border-color:var(--verde)}
+.fil-btn.f-venta.on{background:var(--naranja);border-color:var(--naranja)}
+
+/* GRID */
+.grid-dias{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--borde);border-radius:14px;overflow:hidden;margin-bottom:20px}
+.cal-lbl{background:var(--bg);padding:8px 4px;text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--suave)}
+.cal-dia{background:var(--blanco);min-height:96px;padding:8px;cursor:pointer;transition:.1s background}
+.cal-dia:hover{background:#fafafa}
+.cal-dia.hoy{background:#f0f7ff}
+.cal-dia.otro-mes{background:var(--bg)}
+.dia-num{font-size:13px;font-weight:400;margin-bottom:5px;color:var(--suave)}
+.cal-dia.hoy .dia-num{font-weight:700;color:var(--azul)}
+.ev{border-radius:5px;padding:2px 6px;font-size:10px;font-weight:500;color:#fff;margin-bottom:2px;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block}
+.ev-inst{background:var(--verde)}.ev-mant{background:var(--azul)}.ev-corr{background:var(--rojo)}
+.ev-bloq{background:var(--gris)}.ev-lev{background:var(--morado)}.ev-venta{background:var(--naranja)}
+
+/* LISTA CARDS */
+.card{background:var(--blanco);border-radius:14px;border:1px solid var(--borde);padding:16px 18px;margin-bottom:10px;transition:.15s all}
+.card:hover{border-color:#b5b5ba;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.card-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.card-tit{font-size:15px;font-weight:500}
+.card-meta{font-size:12px;color:var(--suave);display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.acciones{display:flex;gap:6px;flex-wrap:wrap}
+
+/* EQUIPO */
+.av{width:36px;height:36px;border-radius:50%;background:var(--vc);border:2px solid var(--verde);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--verde);flex-shrink:0}
+.trabajador-row{display:flex;align-items:center;gap:12px;background:var(--blanco);border:1px solid var(--borde);border-radius:12px;padding:12px 16px;margin-bottom:8px}
+.t-info{flex:1}
+.t-nombre{font-size:14px;font-weight:500}
+.t-sub{font-size:12px;color:var(--suave);margin-top:2px}
+.pill{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.pill-g{background:var(--vc);border:1px solid var(--verde);color:var(--verde)}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.modal{background:var(--blanco);border-radius:20px 20px 0 0;width:100%;max-width:540px;max-height:90vh;overflow-y:auto}
+.m-hdr{padding:18px 22px;border-bottom:1px solid var(--borde);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--blanco);z-index:1}
+.m-tit{font-size:17px;font-weight:600}
+.m-x{width:28px;height:28px;border-radius:50%;background:var(--bg);border:none;cursor:pointer;font-size:14px;color:var(--suave)}
+.m-body{padding:20px 22px}
+.m-ftr{padding:14px 22px;border-top:1px solid var(--borde);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:var(--blanco)}
+
+/* FORM */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fc{display:flex;flex-direction:column;gap:5px}
+.fc.full{grid-column:1/-1}
+.fc label{font-size:12px;font-weight:500;color:var(--suave)}
+.fc input,.fc select,.fc textarea{padding:10px 12px;border:1px solid var(--borde);border-radius:10px;font-size:14px;font-family:inherit;background:var(--bg);outline:none;color:var(--texto);width:100%}
+.fc input:focus,.fc select:focus,.fc textarea:focus{border-color:var(--azul);background:var(--blanco)}
+.fc textarea{resize:vertical;min-height:64px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{padding:5px 12px;border-radius:20px;border:1px solid var(--borde);font-size:12px;font-weight:500;cursor:pointer;background:var(--bg);color:var(--texto);transition:.1s all}
+.chip.on{background:var(--vc);border-color:var(--verde);color:var(--verde)}
+
+/* DETAIL GRID */
+.det-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.det-item{background:var(--bg);border-radius:10px;padding:12px 14px}
+.det-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--suave);margin-bottom:4px}
+.det-val{font-size:14px}
+
+/* SEPARADOR sección */
+.sec-sep{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--suave);padding:10px 0 6px;border-top:1px solid var(--borde);margin-top:10px;grid-column:1/-1}
+
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;padding:11px 22px;border-radius:20px;font-size:14px;z-index:999;display:none;white-space:nowrap}
+.toast.show{display:block}
+.empty{text-align:center;padding:40px 20px;color:var(--suave);font-size:13px}
+@media(max-width:680px){.fg{grid-template-columns:1fr}.cal-dia{min-height:64px}.filtros{margin-left:0}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-l">
+    <div class="logo">SYNTRA</div>
+    <span class="badge-admin">ADMIN</span>
+  </div>
+  <span class="conn" id="conn">● Conectando…</span>
+</nav>
+
+<div class="tabs">
+  <div class="tab on" onclick="tab('cal',this)">Calendario</div>
+  <div class="tab" onclick="tab('ops',this)">Operaciones <span class="pending-count" id="cnt-ops" style="display:none"></span></div>
+  <div class="tab" onclick="tab('ventas',this)">Ventas <span class="pending-count" id="cnt-ventas" style="display:none"></span></div>
+  <div class="tab" onclick="tab('equipo',this)">Equipo</div>
+</div>
+
+<!-- ═══ CALENDARIO ═══════════════════════════════════ -->
+<div id="v-cal" class="wrap">
+  <div class="cal-toolbar">
+    <button class="nav-btn" onclick="mes(-1)">‹</button>
+    <div class="cal-mes" id="cal-mes"></div>
+    <button class="nav-btn" onclick="mes(1)">›</button>
+    <button class="btn btn-s btn-sm" onclick="mesHoy()">Hoy</button>
+    <div class="filtros">
+      <button class="fil-btn f-ops on" id="fil-ops" onclick="toggleFil('ops')">● Operaciones</button>
+      <button class="fil-btn f-venta on" id="fil-venta" onclick="toggleFil('venta')">● Ventas</button>
+    </div>
+    <button class="btn btn-p btn-sm" onclick="abrirNuevoTrabajo()">+ Operación</button>
+    <button class="btn btn-a btn-sm" onclick="abrirNuevaVenta()">+ Venta</button>
+  </div>
+  <div class="grid-dias" id="grid-dias">
+    <div class="cal-lbl">Lun</div><div class="cal-lbl">Mar</div><div class="cal-lbl">Mié</div>
+    <div class="cal-lbl">Jue</div><div class="cal-lbl">Vie</div><div class="cal-lbl">Sáb</div>
+    <div class="cal-lbl">Dom</div>
+  </div>
+</div>
+
+<!-- ═══ OPERACIONES ═══════════════════════════════════ -->
+<div id="v-ops" class="wrap" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select id="fops-tipo" onchange="renderOps()" style="padding:7px 12px;border:1px solid var(--borde);border-radius:10px;font-size:13px;font-family:inherit;background:var(--bg)">
+        <option value="">Todos los tipos</option>
+        <option value="instalacion">Instalación</option>
+        <option value="mantenimiento">Mantenimiento</option>
+        <option value="correccion">Corrección</option>
+        <option value="bloqueo">Bloqueo</option>
+        <option value="levantamiento">Levantamiento</option>
+      </select>
+      <select id="fops-estado" onchange="renderOps()" style="padding:7px 12px;border:1px solid var(--borde);border-radius:10px;font-size:13px;font-family:inherit;background:var(--bg)">
+        <option value="">Todos los estados</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="en_proceso">En proceso</option>
+        <option value="completado">Completado</option>
+      </select>
+    </div>
+    <button class="btn btn-p btn-sm" onclick="abrirNuevoTrabajo()">+ Nuevo trabajo</button>
+  </div>
+  <div id="lista-ops"></div>
+</div>
+
+<!-- ═══ VENTAS ════════════════════════════════════════ -->
+<div id="v-ventas" class="wrap" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select id="fv-estado" onchange="renderVentas()" style="padding:7px 12px;border:1px solid var(--borde);border-radius:10px;font-size:13px;font-family:inherit;background:var(--bg)">
+        <option value="">Todos los estados</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="realizada">Realizada</option>
+        <option value="cancelada">Cancelada</option>
+      </select>
+      <select id="fv-vendedor" onchange="renderVentas()" style="padding:7px 12px;border:1px solid var(--borde);border-radius:10px;font-size:13px;font-family:inherit;background:var(--bg)">
+        <option value="">Todos los vendedores</option>
+      </select>
+    </div>
+    <button class="btn btn-a btn-sm" onclick="abrirNuevaVenta()">+ Nueva cita</button>
+  </div>
+  <div id="lista-ventas"></div>
+</div>
+
+<!-- ═══ EQUIPO ════════════════════════════════════════ -->
+<div id="v-equipo" class="wrap" style="display:none">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+    <button class="btn btn-p btn-sm" onclick="abrirNuevoTrabajador()">+ Agregar trabajador</button>
+  </div>
+  <div id="lista-equipo"></div>
+</div>
+
+<!-- MODAL: TRABAJO (operación) -->
+<div class="overlay" id="m-trabajo">
+  <div class="modal">
+    <div class="m-hdr">
+      <div class="m-tit" id="mt-tit">Nuevo trabajo</div>
+      <button class="m-x" onclick="cerrar('m-trabajo')">✕</button>
+    </div>
+    <div class="m-body">
+      <div class="fg">
+        <div class="fc full"><label>Título *</label><input id="t-titulo" placeholder="Ej. Instalación Casa López"></div>
+        <div class="fc"><label>Tipo *</label>
+          <select id="t-tipo" onchange="toggleTecnico()">
+            <option value="instalacion">Instalación</option>
+            <option value="mantenimiento">Mantenimiento</option>
+            <option value="correccion">Corrección de falla</option>
+            <option value="bloqueo">Bloqueo / Vacaciones</option>
+            <option value="levantamiento">Levantamiento</option>
+          </select>
+        </div>
+        <div class="fc"><label>Estado</label>
+          <select id="t-estado">
+            <option value="pendiente">Pendiente</option>
+            <option value="en_proceso">En proceso</option>
+            <option value="completado">Completado</option>
+          </select>
+        </div>
+        <div class="fc"><label>Fecha inicio *</label><input type="date" id="t-fi"></div>
+        <div class="fc"><label>Fecha fin</label><input type="date" id="t-ff"></div>
+        <div class="fc full"><label>Cliente / Dirección</label><input id="t-cliente" placeholder="Nombre y ubicación"></div>
+        <div class="fc full" id="bloque-tecnico" style="display:none">
+          <div class="fg" style="margin-bottom:0">
+            <div class="fc"><label>Cantidad de paneles</label><input type="number" id="t-paneles" placeholder="Ej. 12" min="1"></div>
+            <div class="fc"><label>Potencia por panel (W)</label><input type="number" id="t-panel-w" placeholder="Ej. 550" min="1"></div>
+            <div class="fc"><label>Cantidad de inversores</label><input type="number" id="t-inv-cant" placeholder="Ej. 1" min="1"></div>
+            <div class="fc"><label>Modelo inversor</label><input id="t-inversor" placeholder="Ej. 5k, 6k, 10k…"></div>
+            <div class="fc"><label>Cantidad de baterías</label><input type="number" id="t-bat-cant" placeholder="Ej. 2" min="1"></div>
+            <div class="fc"><label>Modelo / capacidad batería</label><input id="t-bateria" placeholder="Ej. Luxpower 5.1kWh"></div>
+          </div>
+        </div>
+        <div class="fc full"><label>Equipo asignado</label><div class="chips" id="chips-trab"></div></div>
+        <div class="fc full"><label>Notas</label><textarea id="t-notas" placeholder="Observaciones…"></textarea></div>
+      </div>
+    </div>
+    <div class="m-ftr" id="mt-ftr">
+      <button class="btn btn-s" onclick="cerrar('m-trabajo')">Cancelar</button>
+      <button class="btn btn-p" onclick="guardarTrabajo()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CITA DE VENTA -->
+<div class="overlay" id="m-venta">
+  <div class="modal">
+    <div class="m-hdr">
+      <div class="m-tit" id="mv-tit">Nueva cita de venta</div>
+      <button class="m-x" onclick="cerrar('m-venta')">✕</button>
+    </div>
+    <div class="m-body">
+      <div class="fg">
+        <div class="fc full"><label>Nombre del cliente *</label><input id="v-nombre" placeholder="Nombre completo"></div>
+        <div class="fc"><label>Teléfono *</label><input id="v-tel" placeholder="10 dígitos" type="tel"></div>
+        <div class="fc"><label>Vendedor</label>
+          <select id="v-vendedor">
+            <option value="Alex">Alex</option>
+            <option value="Sergio">Sergio</option>
+          </select>
+        </div>
+        <div class="fc"><label>Fecha *</label><input type="date" id="v-fecha"></div>
+        <div class="fc"><label>Hora</label><input type="time" id="v-hora" placeholder="Ej. 10:00"></div>
+        <div class="fc full"><label>Dirección</label><input id="v-dir" placeholder="Calle, colonia, ciudad"></div>
+        <div class="fc"><label>Estado</label>
+          <select id="v-estado">
+            <option value="pendiente">Pendiente</option>
+            <option value="realizada">Realizada</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+        </div>
+        <div class="fc full"><label>Notas</label><textarea id="v-notas" placeholder="Tipo de cliente, interés, observaciones…"></textarea></div>
+      </div>
+    </div>
+    <div class="m-ftr" id="mv-ftr">
+      <button class="btn btn-s" onclick="cerrar('m-venta')">Cancelar</button>
+      <button class="btn btn-a" onclick="guardarVenta()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DETALLE TRABAJO -->
+<div class="overlay" id="m-det-trabajo">
+  <div class="modal">
+    <div class="m-hdr">
+      <div class="m-tit" id="mdt-tit"></div>
+      <button class="m-x" onclick="cerrar('m-det-trabajo')">✕</button>
+    </div>
+    <div class="m-body" id="mdt-body"></div>
+    <div class="m-ftr">
+      <button class="btn btn-r btn-sm" onclick="eliminarTrabajo()">Eliminar</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-s" onclick="cerrar('m-det-trabajo')">Cerrar</button>
+      <button class="btn btn-p" onclick="editarTrabajo()">Editar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DETALLE VENTA -->
+<div class="overlay" id="m-det-venta">
+  <div class="modal">
+    <div class="m-hdr">
+      <div class="m-tit" id="mdv-tit"></div>
+      <button class="m-x" onclick="cerrar('m-det-venta')">✕</button>
+    </div>
+    <div class="m-body" id="mdv-body"></div>
+    <div class="m-ftr">
+      <button class="btn btn-r btn-sm" onclick="eliminarVenta()">Eliminar</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-s" onclick="cerrar('m-det-venta')">Cerrar</button>
+      <button class="btn btn-a" onclick="editarVenta()">Editar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TRABAJADOR -->
+<div class="overlay" id="m-trabajador">
+  <div class="modal">
+    <div class="m-hdr">
+      <div class="m-tit" id="mw-tit">Agregar trabajador</div>
+      <button class="m-x" onclick="cerrar('m-trabajador')">✕</button>
+    </div>
+    <div class="m-body">
+      <div class="fg">
+        <div class="fc full"><label>Nombre *</label><input id="w-nombre" placeholder="Nombre completo"></div>
+        <div class="fc full"><label>Teléfono (opcional)</label><input id="w-tel" placeholder="10 dígitos"></div>
+      </div>
+    </div>
+    <div class="m-ftr">
+      <button class="btn btn-s" onclick="cerrar('m-trabajador')">Cancelar</button>
+      <button class="btn btn-p" onclick="guardarTrabajador()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const db = supabase.createClient(
+  'https://ypmkuroqjhgidqpjhvtj.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwbWt1cm9xamhnaWRxcGpodnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTk2MTcsImV4cCI6MjA5NTU3NTYxN30.4yhzqtKRlWJNMbxUyXnTonIicdh8Ose1geHI7wBQlws'
+);
+
+// ── Estado global ──────────────────────────────────────
+let trabajos=[], trabajadores=[], asigs=[], ventas=[];
+let hoy=new Date(), añoAct=hoy.getFullYear(), mesAct=hoy.getMonth();
+let editTrabId=null, editVentaId=null, editTrabajadorId_=null;
+let filOps=true, filVenta=true;
+
+// ── Mapas de etiquetas ──────────────────────────────────
+const TIPO_LBL={instalacion:'Instalación',mantenimiento:'Mantenimiento',correccion:'Corrección',bloqueo:'Bloqueo',levantamiento:'Levantamiento'};
+const TIPO_CLS={instalacion:'b-inst',mantenimiento:'b-mant',correccion:'b-corr',bloqueo:'b-bloq',levantamiento:'b-lev'};
+const TIPO_EV={instalacion:'ev-inst',mantenimiento:'ev-mant',correccion:'ev-corr',bloqueo:'ev-bloq',levantamiento:'ev-lev'};
+const EST_LBL={pendiente:'Pendiente',en_proceso:'En proceso',completado:'Completado'};
+const EST_CLS={pendiente:'b-pend',en_proceso:'b-proc',completado:'b-comp'};
+const VEST_LBL={pendiente:'Pendiente',realizada:'Realizada',cancelada:'Cancelada'};
+const VEST_CLS={pendiente:'b-pend',realizada:'b-comp',cancelada:'b-bloq'};
+const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const fmt=d=>d?new Date(d+'T12:00').toLocaleDateString('es-MX',{day:'numeric',month:'short'}):'—';
+const fmtHora=h=>h?h.substring(0,5):'';
+
+// ── Utilidades ──────────────────────────────────────────
+function toast(m,err){
+  const t=document.getElementById('toast');
+  t.textContent=m; t.style.background=err?'#c0392b':'rgba(0,0,0,.85)';
+  t.className='toast show'; setTimeout(()=>t.className='toast',3200);
+}
+function cerrar(id){document.getElementById(id).classList.remove('open')}
+
+// ── Tabs ────────────────────────────────────────────────
+function tab(v,el){
+  ['cal','ops','ventas','equipo'].forEach(x=>document.getElementById('v-'+x).style.display='none');
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.getElementById('v-'+v).style.display='block';
+  el.classList.add('on');
+  if(v==='ops') renderOps();
+  if(v==='ventas'){renderVentas();poblarFiltroVendedor();}
+  if(v==='equipo') renderEquipo();
+}
+
+// ── Carga datos ─────────────────────────────────────────
+async function cargar(){
+  try{
+    const [a,b,c,d]=await Promise.all([
+      db.from('trabajadores').select('*').eq('activo',true).order('nombre'),
+      db.from('trabajos').select('*').order('fecha_inicio'),
+      db.from('trabajos_trabajadores').select('*'),
+      db.from('citas_venta').select('*').order('fecha'),
+    ]);
+    if(a.error||b.error||c.error||d.error) throw(a.error||b.error||c.error||d.error);
+    trabajadores=a.data||[]; trabajos=b.data||[]; asigs=c.data||[]; ventas=d.data||[];
+    document.getElementById('conn').textContent='● Conectado';
+    document.getElementById('conn').className='conn ok';
+    // badges
+    const cntOps=trabajos.filter(t=>t.estado==='pendiente').length;
+    const cntV=ventas.filter(v=>v.estado==='pendiente').length;
+    const elOps=document.getElementById('cnt-ops');
+    const elV=document.getElementById('cnt-ventas');
+    if(cntOps>0){elOps.textContent=cntOps;elOps.style.display='inline'}else{elOps.style.display='none'}
+    if(cntV>0){elV.textContent=cntV;elV.style.display='inline'}else{elV.style.display='none'}
+    renderCalendario();
+  }catch(e){
+    document.getElementById('conn').textContent='● Error';
+    toast('Error al cargar: '+e.message,true);
+  }
+}
+
+// ── Filtros calendario ──────────────────────────────────
+function toggleFil(tipo){
+  if(tipo==='ops'){
+    filOps=!filOps;
+    document.getElementById('fil-ops').classList.toggle('on',filOps);
+  }else{
+    filVenta=!filVenta;
+    document.getElementById('fil-venta').classList.toggle('on',filVenta);
+  }
+  renderCalendario();
+}
+
+// ── Calendario ──────────────────────────────────────────
+function mes(d){mesAct+=d;if(mesAct>11){mesAct=0;añoAct++}if(mesAct<0){mesAct=11;añoAct--}renderCalendario()}
+function mesHoy(){añoAct=hoy.getFullYear();mesAct=hoy.getMonth();renderCalendario()}
+
+function renderCalendario(){
+  document.getElementById('cal-mes').textContent=MESES[mesAct]+' '+añoAct;
+  const grid=document.getElementById('grid-dias');
+  const lbls=Array.from(grid.querySelectorAll('.cal-lbl'));
+  grid.innerHTML='';
+  lbls.forEach(l=>grid.appendChild(l));
+  const primer=new Date(añoAct,mesAct,1);
+  const ultimo=new Date(añoAct,mesAct+1,0);
+  let ini=(primer.getDay()+6)%7;
+  for(let i=0;i<ini;i++) grid.appendChild(diaEl(new Date(añoAct,mesAct,1-ini+i),true));
+  for(let d=1;d<=ultimo.getDate();d++) grid.appendChild(diaEl(new Date(añoAct,mesAct,d),false));
+  const total=ini+ultimo.getDate();
+  const resto=(7-total%7)%7;
+  for(let i=1;i<=resto;i++) grid.appendChild(diaEl(new Date(añoAct,mesAct+1,i),true));
+}
+
+function diaEl(fecha,otroMes){
+  const fStr=fecha.toISOString().split('T')[0];
+  const esHoy=fecha.toDateString()===hoy.toDateString();
+  const div=document.createElement('div');
+  div.className='cal-dia'+(otroMes?' otro-mes':'')+(esHoy?' hoy':'');
+
+  let html=`<div class="dia-num">${fecha.getDate()}</div>`;
+
+  if(filOps){
+    trabajos.filter(t=>fStr>=t.fecha_inicio&&fStr<=(t.fecha_fin||t.fecha_inicio))
+      .forEach(t=>{
+        html+=`<span class="ev ${TIPO_EV[t.tipo]}" onclick="event.stopPropagation();verDetalleTrabajo(${t.id})">${t.titulo}</span>`;
+      });
+  }
+  if(filVenta){
+    ventas.filter(v=>v.fecha===fStr)
+      .forEach(v=>{
+        const hora=v.hora?fmtHora(v.hora)+' ':'';
+        html+=`<span class="ev ev-venta" onclick="event.stopPropagation();verDetalleVenta(${v.id})">${hora}${v.cliente_nombre}</span>`;
+      });
+  }
+
+  div.innerHTML=html;
+  div.onclick=()=>{
+    // click en día vacío: preguntar qué crear
+    abrirNuevoTrabajo(fStr);
+  };
+  return div;
+}
+
+// ── LISTA OPERACIONES ────────────────────────────────────
+function renderOps(){
+  const ft=document.getElementById('fops-tipo').value;
+  const fe=document.getElementById('fops-estado').value;
+  let data=trabajos.filter(t=>(!ft||t.tipo===ft)&&(!fe||t.estado===fe));
+  data.sort((a,b)=>a.fecha_inicio.localeCompare(b.fecha_inicio));
+  const el=document.getElementById('lista-ops');
+  if(!data.length){el.innerHTML='<div class="empty">Sin trabajos con estos filtros</div>';return}
+  el.innerHTML=data.map(t=>{
+    const eq=asigs.filter(a=>Number(a.trabajo_id)===Number(t.id))
+      .map(a=>trabajadores.find(w=>w.id===a.trabajador_id)?.nombre).filter(Boolean);
+    return `<div class="card">
+      <div class="card-hdr">
+        <div class="card-tit">${t.titulo}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="badge ${TIPO_CLS[t.tipo]}">${TIPO_LBL[t.tipo]}</span>
+          <span class="badge ${EST_CLS[t.estado]}">${EST_LBL[t.estado]}</span>
+        </div>
+      </div>
+      <div class="card-meta">
+        <span>📅 ${fmt(t.fecha_inicio)}${t.fecha_fin&&t.fecha_fin!==t.fecha_inicio?' → '+fmt(t.fecha_fin):''}</span>
+        ${t.cliente_nombre?`<span>📍 ${t.cliente_nombre}</span>`:''}
+        ${t.paneles?`<span>🔆 ${t.paneles}${t.panel_w?' x'+t.panel_w+'W':''} pan.</span>`:''}
+        ${eq.length?`<span>👷 ${eq.join(', ')}</span>`:'<span style="color:var(--rojo)">Sin equipo</span>'}
+      </div>
+      <div class="acciones">
+        <button class="btn btn-s btn-sm" onclick="verDetalleTrabajo(${t.id})">Ver</button>
+        <button class="btn btn-s btn-sm" onclick="editarTrabajoId(${t.id})">Editar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── LISTA VENTAS ─────────────────────────────────────────
+function poblarFiltroVendedor(){
+  const sel=document.getElementById('fv-vendedor');
+  const actual=sel.value;
+  const vendedores=[...new Set(ventas.map(v=>v.vendedor).filter(Boolean))];
+  sel.innerHTML='<option value="">Todos los vendedores</option>'+
+    vendedores.map(v=>`<option value="${v}"${v===actual?' selected':''}>${v}</option>`).join('');
+}
+
+function renderVentas(){
+  const fe=document.getElementById('fv-estado').value;
+  const fv=document.getElementById('fv-vendedor').value;
+  let data=ventas.filter(v=>(!fe||v.estado===fe)&&(!fv||v.vendedor===fv));
+  data.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const el=document.getElementById('lista-ventas');
+  if(!data.length){el.innerHTML='<div class="empty">Sin citas con estos filtros</div>';return}
+  el.innerHTML=data.map(v=>`<div class="card">
+    <div class="card-hdr">
+      <div class="card-tit">${v.cliente_nombre}</div>
+      <span class="badge ${VEST_CLS[v.estado]}">${VEST_LBL[v.estado]}</span>
+    </div>
+    <div class="card-meta">
+      <span>📅 ${fmt(v.fecha)}${v.hora?' · '+fmtHora(v.hora):''}</span>
+      <span>📞 ${v.telefono||'—'}</span>
+      ${v.direccion?`<span>📍 ${v.direccion}</span>`:''}
+      ${v.vendedor?`<span>🧑 ${v.vendedor}</span>`:''}
+    </div>
+    ${v.notas?`<div style="font-size:12px;color:var(--suave);margin-bottom:8px">${v.notas}</div>`:''}
+    <div class="acciones">
+      <button class="btn btn-s btn-sm" onclick="verDetalleVenta(${v.id})">Ver</button>
+      <button class="btn btn-s btn-sm" onclick="editarVentaId(${v.id})">Editar</button>
+    </div>
+  </div>`).join('');
+}
+
+// ── DETALLE TRABAJO ──────────────────────────────────────
+function verDetalleTrabajo(id){
+  const t=trabajos.find(x=>Number(x.id)===Number(id));
+  if(!t)return;
+  editTrabId=t.id;
+  const eq=asigs.filter(a=>Number(a.trabajo_id)===Number(id))
+    .map(a=>trabajadores.find(w=>w.id===a.trabajador_id)?.nombre).filter(Boolean);
+  document.getElementById('mdt-tit').textContent=t.titulo;
+  document.getElementById('mdt-body').innerHTML=`
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+      <span class="badge ${TIPO_CLS[t.tipo]}">${TIPO_LBL[t.tipo]}</span>
+      <span class="badge ${EST_CLS[t.estado]}">${EST_LBL[t.estado]}</span>
+    </div>
+    <div class="det-grid">
+      <div class="det-item"><div class="det-lbl">Fecha inicio</div><div class="det-val">${fmt(t.fecha_inicio)}</div></div>
+      <div class="det-item"><div class="det-lbl">Fecha fin</div><div class="det-val">${fmt(t.fecha_fin||t.fecha_inicio)}</div></div>
+      ${t.cliente_nombre?`<div class="det-item" style="grid-column:1/-1"><div class="det-lbl">Cliente / Ubicación</div><div class="det-val">${t.cliente_nombre}</div></div>`:''}
+      ${t.paneles?`<div class="det-item"><div class="det-lbl">Paneles</div><div class="det-val">${t.paneles}${t.panel_w?' × '+t.panel_w+' W':''}</div></div>`:''}
+      ${t.inversor?`<div class="det-item"><div class="det-lbl">Inversor</div><div class="det-val">${t.inv_cant?t.inv_cant+'× ':''} ${t.inversor}</div></div>`:''}
+      ${t.bateria_modelo?`<div class="det-item" style="grid-column:1/-1"><div class="det-lbl">Batería</div><div class="det-val">${t.bat_cant?t.bat_cant+'× ':''} ${t.bateria_modelo}</div></div>`:''}
+    </div>
+    ${eq.length?`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:var(--suave);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Equipo</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">${eq.map(n=>`<span class="pill pill-g">${n}</span>`).join('')}</div></div>`
+    :'<div style="color:var(--rojo);font-size:13px;margin-bottom:12px">⚠️ Sin equipo asignado</div>'}
+    ${t.notas?`<div style="background:var(--bg);border-radius:10px;padding:12px;font-size:13px;color:var(--suave)">${t.notas}</div>`:''}`;
+  document.getElementById('m-det-trabajo').classList.add('open');
+}
+
+function editarTrabajo(){cerrar('m-det-trabajo');editarTrabajoId(editTrabId)}
+
+// ── DETALLE VENTA ────────────────────────────────────────
+function verDetalleVenta(id){
+  const v=ventas.find(x=>Number(x.id)===Number(id));
+  if(!v)return;
+  editVentaId=v.id;
+  document.getElementById('mdv-tit').textContent=v.cliente_nombre;
+  document.getElementById('mdv-body').innerHTML=`
+    <div style="margin-bottom:14px"><span class="badge b-venta">Cita de venta</span>
+    <span class="badge ${VEST_CLS[v.estado]}" style="margin-left:6px">${VEST_LBL[v.estado]}</span></div>
+    <div class="det-grid">
+      <div class="det-item"><div class="det-lbl">Fecha</div><div class="det-val">${fmt(v.fecha)}</div></div>
+      <div class="det-item"><div class="det-lbl">Hora</div><div class="det-val">${fmtHora(v.hora)||'—'}</div></div>
+      <div class="det-item"><div class="det-lbl">Teléfono</div><div class="det-val">${v.telefono||'—'}</div></div>
+      <div class="det-item"><div class="det-lbl">Vendedor</div><div class="det-val">${v.vendedor||'—'}</div></div>
+      ${v.direccion?`<div class="det-item" style="grid-column:1/-1"><div class="det-lbl">Dirección</div><div class="det-val">${v.direccion}</div></div>`:''}
+    </div>
+    ${v.notas?`<div style="background:var(--bg);border-radius:10px;padding:12px;font-size:13px;color:var(--suave)">${v.notas}</div>`:''}`;
+  document.getElementById('m-det-venta').classList.add('open');
+}
+
+function editarVenta(){cerrar('m-det-venta');editarVentaId(editVentaId)}
+
+// ── NUEVO / EDITAR TRABAJO ───────────────────────────────
+function abrirNuevoTrabajo(fecha){
+  editTrabId=null;
+  document.getElementById('mt-tit').textContent='Nuevo trabajo';
+  document.getElementById('mt-ftr').innerHTML=`<button class="btn btn-s" onclick="cerrar('m-trabajo')">Cancelar</button><button class="btn btn-p" onclick="guardarTrabajo()">Guardar</button>`;
+  ['t-titulo','t-cliente','t-inversor','t-bateria','t-notas'].forEach(id=>document.getElementById(id).value='');
+  ['t-paneles','t-panel-w','t-inv-cant','t-bat-cant'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('t-tipo').value='instalacion';
+  document.getElementById('t-estado').value='pendiente';
+  document.getElementById('t-fi').value=fecha||'';
+  document.getElementById('t-ff').value='';
+  toggleTecnico();
+  renderChips([]);
+  document.getElementById('m-trabajo').classList.add('open');
+}
+
+function editarTrabajoId(id){
+  const t=trabajos.find(x=>Number(x.id)===Number(id));
+  if(!t)return;
+  editTrabId=id;
+  document.getElementById('mt-tit').textContent='Editar trabajo';
+  document.getElementById('mt-ftr').innerHTML=`<button class="btn btn-s" onclick="cerrar('m-trabajo')">Cancelar</button><button class="btn btn-p" onclick="guardarTrabajo()">Guardar cambios</button>`;
+  document.getElementById('t-titulo').value=t.titulo||'';
+  document.getElementById('t-tipo').value=t.tipo||'instalacion';
+  document.getElementById('t-estado').value=t.estado||'pendiente';
+  document.getElementById('t-fi').value=t.fecha_inicio||'';
+  document.getElementById('t-ff').value=t.fecha_fin||'';
+  document.getElementById('t-cliente').value=t.cliente_nombre||'';
+  document.getElementById('t-paneles').value=t.paneles||'';
+  document.getElementById('t-panel-w').value=t.panel_w||'';
+  document.getElementById('t-inv-cant').value=t.inv_cant||'';
+  document.getElementById('t-inversor').value=t.inversor||'';
+  document.getElementById('t-bat-cant').value=t.bat_cant||'';
+  document.getElementById('t-bateria').value=t.bateria_modelo||'';
+  document.getElementById('t-notas').value=t.notas||'';
+  toggleTecnico();
+  const sel=asigs.filter(a=>Number(a.trabajo_id)===Number(id)).map(a=>a.trabajador_id);
+  renderChips(sel);
+  document.getElementById('m-trabajo').classList.add('open');
+}
+
+function toggleTecnico(){
+  const v=['instalacion','mantenimiento','correccion'].includes(document.getElementById('t-tipo').value);
+  document.getElementById('bloque-tecnico').style.display=v?'flex':'none';
+  document.getElementById('bloque-tecnico').style.flexDirection='column';
+  document.getElementById('bloque-tecnico').style.gap='6px';
+}
+
+function renderChips(sel){
+  const c=document.getElementById('chips-trab');
+  c.innerHTML=trabajadores.map(w=>`<div class="chip${sel.includes(w.id)?' on':''}" onclick="toggleChip(this,${w.id})">${w.nombre}</div>`).join('');
+}
+function toggleChip(el){el.classList.toggle('on')}
+function chipsSel(){
+  return Array.from(document.querySelectorAll('#chips-trab .chip.on')).map(c=>parseInt(c.getAttribute('onclick').match(/\d+/)[0]));
+}
+
+async function guardarTrabajo(){
+  const titulo=document.getElementById('t-titulo').value.trim();
+  const fi=document.getElementById('t-fi').value;
+  if(!titulo||!fi){toast('Título y fecha de inicio son requeridos',true);return}
+  const datos={
+    titulo, tipo:document.getElementById('t-tipo').value,
+    estado:document.getElementById('t-estado').value,
+    fecha_inicio:fi,
+    fecha_fin:document.getElementById('t-ff').value||fi,
+    cliente_nombre:document.getElementById('t-cliente').value.trim()||null,
+    paneles:parseInt(document.getElementById('t-paneles').value)||null,
+    panel_w:parseInt(document.getElementById('t-panel-w').value)||null,
+    inv_cant:parseInt(document.getElementById('t-inv-cant').value)||null,
+    inversor:document.getElementById('t-inversor').value.trim()||null,
+    bat_cant:parseInt(document.getElementById('t-bat-cant').value)||null,
+    bateria_modelo:document.getElementById('t-bateria').value.trim()||null,
+    notas:document.getElementById('t-notas').value.trim()||null,
+  };
+  let tid;
+  if(editTrabId){
+    const {error}=await db.from('trabajos').update(datos).eq('id',editTrabId);
+    if(error){toast('Error: '+error.message,true);return}
+    tid=editTrabId;
+  }else{
+    const {data,error}=await db.from('trabajos').insert(datos).select().single();
+    if(error){toast('Error: '+error.message,true);return}
+    tid=data.id;
+  }
+  await db.from('trabajos_trabajadores').delete().eq('trabajo_id',tid);
+  const sel=chipsSel();
+  if(sel.length) await db.from('trabajos_trabajadores').insert(sel.map(wid=>({trabajo_id:tid,trabajador_id:wid})));
+  cerrar('m-trabajo');
+  toast(editTrabId?'Trabajo actualizado':'Trabajo creado');
+  await cargar();
+}
+
+async function eliminarTrabajo(){
+  if(!editTrabId)return;
+  if(!confirm('¿Eliminar este trabajo?'))return;
+  await db.from('trabajos_trabajadores').delete().eq('trabajo_id',editTrabId);
+  const {error}=await db.from('trabajos').delete().eq('id',editTrabId);
+  if(error){toast('Error: '+error.message,true);return}
+  cerrar('m-det-trabajo'); toast('Trabajo eliminado'); await cargar();
+}
+
+// ── NUEVO / EDITAR VENTA ─────────────────────────────────
+function abrirNuevaVenta(fecha){
+  editVentaId=null;
+  document.getElementById('mv-tit').textContent='Nueva cita de venta';
+  document.getElementById('mv-ftr').innerHTML=`<button class="btn btn-s" onclick="cerrar('m-venta')">Cancelar</button><button class="btn btn-a" onclick="guardarVenta()">Guardar</button>`;
+  ['v-nombre','v-tel','v-dir','v-hora','v-notas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('v-fecha').value=fecha||'';
+  document.getElementById('v-vendedor').value='Alex';
+  document.getElementById('v-estado').value='pendiente';
+  document.getElementById('m-venta').classList.add('open');
+}
+
+function editarVentaId(id){
+  const v=ventas.find(x=>Number(x.id)===Number(id));
+  if(!v)return;
+  editVentaId=id;
+  document.getElementById('mv-tit').textContent='Editar cita';
+  document.getElementById('mv-ftr').innerHTML=`<button class="btn btn-s" onclick="cerrar('m-venta')">Cancelar</button><button class="btn btn-a" onclick="guardarVenta()">Guardar cambios</button>`;
+  document.getElementById('v-nombre').value=v.cliente_nombre||'';
+  document.getElementById('v-tel').value=v.telefono||'';
+  document.getElementById('v-fecha').value=v.fecha||'';
+  document.getElementById('v-hora').value=v.hora||'';
+  document.getElementById('v-dir').value=v.direccion||'';
+  document.getElementById('v-vendedor').value=v.vendedor||'Alex';
+  document.getElementById('v-estado').value=v.estado||'pendiente';
+  document.getElementById('v-notas').value=v.notas||'';
+  document.getElementById('m-venta').classList.add('open');
+}
+
+async function guardarVenta(){
+  const nombre=document.getElementById('v-nombre').value.trim();
+  const fecha=document.getElementById('v-fecha').value;
+  const tel=document.getElementById('v-tel').value.trim();
+  if(!nombre||!fecha||!tel){toast('Nombre, teléfono y fecha son requeridos',true);return}
+  const datos={
+    cliente_nombre:nombre,
+    telefono:tel,
+    fecha,
+    hora:document.getElementById('v-hora').value||null,
+    direccion:document.getElementById('v-dir').value.trim()||null,
+    vendedor:document.getElementById('v-vendedor').value||null,
+    estado:document.getElementById('v-estado').value,
+    notas:document.getElementById('v-notas').value.trim()||null,
+  };
+  if(editVentaId){
+    const {error}=await db.from('citas_venta').update(datos).eq('id',editVentaId);
+    if(error){toast('Error: '+error.message,true);return}
+  }else{
+    const {error}=await db.from('citas_venta').insert(datos);
+    if(error){toast('Error: '+error.message,true);return}
+  }
+  cerrar('m-venta');
+  toast(editVentaId?'Cita actualizada':'Cita creada');
+  await cargar();
+}
+
+async function eliminarVenta(){
+  if(!editVentaId)return;
+  if(!confirm('¿Eliminar esta cita?'))return;
+  const {error}=await db.from('citas_venta').delete().eq('id',editVentaId);
+  if(error){toast('Error: '+error.message,true);return}
+  cerrar('m-det-venta'); toast('Cita eliminada'); await cargar();
+}
+
+// ── EQUIPO ───────────────────────────────────────────────
+function renderEquipo(){
+  const el=document.getElementById('lista-equipo');
+  if(!trabajadores.length){el.innerHTML='<div class="empty">Sin trabajadores registrados</div>';return}
+  el.innerHTML=trabajadores.map(w=>{
+    const n=asigs.filter(a=>a.trabajador_id===w.id).length;
+    return `<div class="trabajador-row">
+      <div class="av">${w.nombre.charAt(0).toUpperCase()}</div>
+      <div class="t-info">
+        <div class="t-nombre">${w.nombre}</div>
+        <div class="t-sub">${n} trabajo${n!==1?'s':''} asignado${n!==1?'s':''}</div>
+        ${w.telefono?`<div style="font-size:12px;color:var(--suave);margin-top:2px">📞 ${w.telefono}</div>`:''}
+      </div>
+      <div class="acciones">
+        <button class="btn btn-s btn-sm" onclick="editarTrabajadorIdFn(${w.id})">Editar</button>
+        <button class="btn btn-r btn-sm" onclick="desactivarTrabajador(${w.id})">Desactivar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function abrirNuevoTrabajador(){
+  editTrabajadorId_=null;
+  document.getElementById('mw-tit').textContent='Agregar trabajador';
+  document.getElementById('w-nombre').value='';
+  document.getElementById('w-tel').value='';
+  document.getElementById('m-trabajador').classList.add('open');
+}
+
+function editarTrabajadorIdFn(id){
+  const w=trabajadores.find(x=>x.id===id);
+  if(!w)return;
+  editTrabajadorId_=id;
+  document.getElementById('mw-tit').textContent='Editar trabajador';
+  document.getElementById('w-nombre').value=w.nombre||'';
+  document.getElementById('w-tel').value=w.telefono||'';
+  document.getElementById('m-trabajador').classList.add('open');
+}
+
+async function guardarTrabajador(){
+  const nombre=document.getElementById('w-nombre').value.trim();
+  if(!nombre){toast('El nombre es requerido',true);return}
+  const datos={nombre,telefono:document.getElementById('w-tel').value.trim()||null,activo:true};
+  if(editTrabajadorId_){
+    const {error}=await db.from('trabajadores').update(datos).eq('id',editTrabajadorId_);
+    if(error){toast('Error: '+error.message,true);return}
+  }else{
+    const {error}=await db.from('trabajadores').insert(datos);
+    if(error){toast('Error: '+error.message,true);return}
+  }
+  cerrar('m-trabajador');
+  toast(editTrabajadorId_?'Trabajador actualizado':'Trabajador agregado');
+  await cargar(); renderEquipo();
+}
+
+async function desactivarTrabajador(id){
+  if(!confirm('¿Desactivar este trabajador?'))return;
+  await db.from('trabajadores').update({activo:false}).eq('id',id);
+  toast('Trabajador desactivado');
+  await cargar(); renderEquipo();
+}
+
+cargar();
+</script>
+</body>
+</html>

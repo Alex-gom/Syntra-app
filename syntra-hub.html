@@ -3,23 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Syntra</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<title>SYNTRA — Portal</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #f5f5f7;
+  --bg: #f2f2f7;
   --blanco: #ffffff;
-  --texto: #1d1d1f;
-  --suave: #6e6e73;
-  --borde: #d2d2d7;
+  --texto: #1c1c1e;
+  --suave: #8e8e93;
+  --borde: #e5e5ea;
   --verde: #1d6f42;
+  --verde-vivo: #30d158;
   --verde-claro: #e8f5ee;
   --rojo: #c0392b;
   --rojo-claro: #fdecea;
-  --azul: #0066cc;
+  --azul: #0071e3;
+  --azul-claro: #e8f1fb;
+  --amarillo: #f59e0b;
+  --naranja: #c2410c;
 }
 
 body {
@@ -32,12 +36,12 @@ body {
 
 /* NAV */
 nav {
-  background: rgba(245,245,247,0.85);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid var(--borde);
-  padding: 0 48px;
-  height: 52px;
+  background: rgba(242,242,247,0.82);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  padding: 0 32px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -47,36 +51,38 @@ nav {
 }
 
 .nav-logo {
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: 4px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 5px;
   color: var(--texto);
 }
 
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
-.nav-status {
+.nav-pill {
   display: flex;
   align-items: center;
   gap: 6px;
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-radius: 20px;
+  padding: 5px 12px;
   font-size: 12px;
   color: var(--suave);
 }
 
-.status-dot {
-  width: 7px;
-  height: 7px;
+.dot {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #ccc;
+  flex-shrink: 0;
 }
-
-.status-dot.ok {
-  background: #34c759;
-}
+.dot.ok { background: var(--verde-vivo); }
 
 .nav-fecha {
   font-size: 12px;
@@ -85,77 +91,100 @@ nav {
 
 /* WRAP */
 .wrap {
-  max-width: 980px;
+  max-width: 1020px;
   margin: 0 auto;
   padding: 0 24px;
 }
 
 /* HERO */
 .hero {
-  padding: 80px 0 64px;
-  border-bottom: 1px solid var(--borde);
-  margin-bottom: 64px;
+  padding: 72px 0 56px;
 }
 
-.hero-label {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 2px;
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
   text-transform: uppercase;
   color: var(--suave);
-  margin-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+.hero-eyebrow::before {
+  content: '';
+  display: block;
+  width: 18px;
+  height: 1px;
+  background: var(--suave);
 }
 
 .hero-titulo {
-  font-size: 56px;
+  font-size: 52px;
   font-weight: 300;
-  letter-spacing: -1.5px;
-  line-height: 1.05;
+  letter-spacing: -2px;
+  line-height: 1.06;
   color: var(--texto);
-  margin-bottom: 8px;
 }
 
 .hero-titulo strong {
-  font-weight: 600;
+  font-weight: 700;
+  background: linear-gradient(135deg, #1d6f42 0%, #0071e3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .hero-sub {
-  font-size: 17px;
-  font-weight: 300;
+  font-size: 16px;
+  font-weight: 400;
   color: var(--suave);
-  margin-top: 12px;
+  margin-top: 14px;
+  max-width: 420px;
+  line-height: 1.5;
 }
 
 /* STATS */
-.stats-strip {
+.stats-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: var(--borde);
-  border: 1px solid var(--borde);
-  border-radius: 18px;
-  overflow: hidden;
-  margin-bottom: 64px;
+  gap: 12px;
+  margin: 40px 0 56px;
 }
 
-.stat {
+.stat-card {
   background: var(--blanco);
-  padding: 28px 24px;
-  transition: background 0.15s;
+  border-radius: 20px;
+  border: 1px solid var(--borde);
+  padding: 24px 22px;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.stat:hover { background: #fafafa; }
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+}
+
+.stat-icon {
+  font-size: 20px;
+  margin-bottom: 16px;
+  display: block;
+  opacity: 0.7;
+}
 
 .stat-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--suave);
-  margin-bottom: 10px;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
 }
 
 .stat-valor {
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 300;
   letter-spacing: -1px;
   color: var(--texto);
@@ -166,168 +195,136 @@ nav {
 .stat-valor.rojo { color: var(--rojo); }
 
 .stat-sub {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--suave);
   margin-top: 6px;
 }
 
-/* SECTION LABEL */
-.section-label {
-  font-size: 12px;
-  font-weight: 500;
+/* SECCIÓN LABEL */
+.sec-label {
+  font-size: 11px;
+  font-weight: 600;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--suave);
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
-/* GRID MÓDULOS */
-.modulos-grid {
+/* MÓDULOS PRINCIPALES */
+.grid-principal {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 64px;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
 .modulo {
   background: var(--blanco);
-  border-radius: 18px;
+  border-radius: 22px;
   border: 1px solid var(--borde);
   padding: 28px;
   text-decoration: none;
   color: inherit;
   display: flex;
   flex-direction: column;
-  transition: all 0.2s ease;
+  transition: all 0.22s ease;
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  min-height: 200px;
+}
+
+.modulo::after {
+  content: '→';
+  position: absolute;
+  bottom: 24px;
+  right: 26px;
+  font-size: 18px;
+  color: var(--suave);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: all 0.22s ease;
 }
 
 .modulo:hover {
-  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-  transform: translateY(-2px);
-  border-color: #c0c0c5;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.09);
+  transform: translateY(-3px);
+  border-color: #c8c8cc;
 }
 
-.modulo.featured {
-  grid-column: span 2;
-  background: var(--texto);
-  color: white;
-  border-color: var(--texto);
+.modulo:hover::after {
+  opacity: 1;
+  transform: translateX(0);
 }
 
-.modulo.featured:hover {
-  background: #2a2a2e;
-  border-color: #2a2a2e;
+/* Acento de color en borde superior */
+.modulo.mod-proyectos { border-top: 3px solid var(--verde); }
+.modulo.mod-calendario { border-top: 3px solid var(--azul); }
+.modulo.mod-finanzas   { border-top: 3px solid var(--amarillo); }
+
+.mod-icono-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 18px;
+  flex-shrink: 0;
 }
 
-.modulo.nueva-venta {
-  background: var(--verde);
-  color: white;
-  border-color: var(--verde);
-}
+.mod-proyectos .mod-icono-wrap { background: var(--verde-claro); }
+.mod-calendario .mod-icono-wrap { background: var(--azul-claro); }
+.mod-finanzas .mod-icono-wrap   { background: #fef3c7; }
 
-.modulo.nueva-venta:hover {
-  background: #1a5f38;
-  border-color: #1a5f38;
-}
-
-.modulo-icono {
-  font-size: 28px;
-  margin-bottom: 20px;
-  display: block;
-}
-
-.modulo-nombre {
-  font-size: 21px;
-  font-weight: 500;
+.mod-nombre {
+  font-size: 18px;
+  font-weight: 600;
   letter-spacing: -0.3px;
   margin-bottom: 8px;
   line-height: 1.2;
 }
 
-.modulo-desc {
+.mod-desc {
   font-size: 13px;
   color: var(--suave);
-  line-height: 1.5;
-  font-weight: 300;
+  line-height: 1.55;
   flex: 1;
-  margin-bottom: 20px;
 }
 
-.modulo.featured .modulo-desc,
-.modulo.nueva-venta .modulo-desc { color: rgba(255,255,255,0.6); }
-
-.modulo-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.modulo-stat-item {
-  background: rgba(255,255,255,0.08);
-  border-radius: 10px;
-  padding: 10px 12px;
-}
-
-.modulo-stat-label {
-  font-size: 10px;
-  color: rgba(255,255,255,0.5);
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
-  text-transform: uppercase;
-}
-
-.modulo-stat-valor {
-  font-size: 20px;
-  font-weight: 500;
-  color: white;
-  letter-spacing: -0.5px;
-}
-
-.modulo-footer {
+.mod-mini-stats {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: auto;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--borde);
 }
 
-.modulo-url {
-  font-size: 11px;
+.mod-mini-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mod-mini-label {
+  font-size: 10px;
   color: var(--suave);
-  font-family: 'SF Mono', 'Menlo', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.modulo.featured .modulo-url,
-.modulo.nueva-venta .modulo-url { color: rgba(255,255,255,0.4); }
-
-.modulo-arrow {
+.mod-mini-val {
   font-size: 18px;
-  color: var(--suave);
-  transition: transform 0.2s;
-}
-
-.modulo:hover .modulo-arrow { transform: translateX(4px); }
-.modulo.featured .modulo-arrow,
-.modulo.nueva-venta .modulo-arrow { color: rgba(255,255,255,0.5); }
-
-.pendiente-alerta {
-  background: rgba(255,255,255,0.15);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  color: white;
-  margin-bottom: 16px;
-  display: none;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--texto);
 }
 
 /* APROBACIONES */
 .aprobaciones-section {
   display: none;
-  margin-bottom: 64px;
+  margin-bottom: 40px;
 }
 
 .aprobacion-card {
@@ -335,152 +332,157 @@ nav {
   border: 1px solid var(--borde);
   border-left: 3px solid var(--rojo);
   border-radius: 18px;
-  padding: 28px;
-  margin-bottom: 12px;
+  padding: 24px;
+  margin-bottom: 10px;
 }
 
 .aprobacion-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.aprobacion-nombre {
-  font-size: 20px;
-  font-weight: 500;
-  letter-spacing: -0.3px;
-  margin-bottom: 4px;
-}
-
-.aprobacion-meta {
-  font-size: 12px;
-  color: var(--suave);
-}
-
-.aprobacion-monto {
-  font-size: 28px;
-  font-weight: 300;
-  letter-spacing: -0.5px;
-  color: var(--verde);
-}
+.aprobacion-nombre { font-size: 18px; font-weight: 600; margin-bottom: 3px; }
+.aprobacion-meta { font-size: 12px; color: var(--suave); }
+.aprobacion-monto { font-size: 24px; font-weight: 300; letter-spacing: -0.5px; color: var(--verde); }
 
 .aprobacion-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .aprobacion-item {
   background: var(--bg);
   border-radius: 12px;
-  padding: 14px;
+  padding: 12px;
   text-align: center;
 }
 
-.aprobacion-item-label {
-  font-size: 11px;
-  color: var(--suave);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
-}
+.aprobacion-item-label { font-size: 10px; color: var(--suave); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.aprobacion-item-valor { font-size: 18px; font-weight: 600; color: var(--texto); }
+.aprobacion-notas { background: var(--bg); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: var(--suave); margin-bottom: 16px; line-height: 1.5; }
 
-.aprobacion-item-valor {
-  font-size: 20px;
-  font-weight: 500;
-  color: var(--texto);
-  letter-spacing: -0.3px;
-}
-
-.aprobacion-notas {
-  background: var(--bg);
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 13px;
-  color: var(--suave);
-  margin-bottom: 20px;
-  line-height: 1.5;
-}
-
-.aprobacion-actions {
-  display: flex;
-  gap: 10px;
-}
+.aprobacion-actions { display: flex; gap: 8px; }
 
 .btn-aprobar {
-  flex: 1;
-  padding: 13px;
-  background: var(--verde);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  font-family: inherit;
-  letter-spacing: -0.2px;
+  flex: 1; padding: 12px;
+  background: var(--verde); color: white;
+  border: none; border-radius: 12px;
+  font-size: 14px; font-weight: 500;
+  cursor: pointer; font-family: inherit;
   transition: background 0.15s;
 }
-
-.btn-aprobar:hover { background: #1a5f38; }
+.btn-aprobar:hover { background: #155c2e; }
 
 .btn-rechazar {
-  padding: 13px 24px;
-  background: transparent;
-  color: var(--rojo);
+  padding: 12px 20px;
+  background: transparent; color: var(--rojo);
   border: 1px solid var(--borde);
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
+  border-radius: 12px; font-size: 14px;
+  font-weight: 500; cursor: pointer;
+  font-family: inherit; transition: all 0.15s;
+}
+.btn-rechazar:hover { background: var(--rojo-claro); border-color: var(--rojo); }
+
+/* MÓDULOS SECUNDARIOS */
+.grid-secundario {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 56px;
 }
 
-.btn-rechazar:hover {
-  background: var(--rojo-claro);
-  border-color: var(--rojo);
+.mod-secundario {
+  background: var(--blanco);
+  border-radius: 18px;
+  border: 1px solid var(--borde);
+  padding: 20px 22px;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s;
 }
+
+.mod-secundario:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+  transform: translateY(-2px);
+  border-color: #c8c8cc;
+}
+
+.mod-sec-icono {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.mod-sec-body { flex: 1; min-width: 0; }
+
+.mod-sec-nombre {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  margin-bottom: 3px;
+}
+
+.mod-sec-desc {
+  font-size: 12px;
+  color: var(--suave);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mod-sec-badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: var(--bg);
+  color: var(--suave);
+  border: 1px solid var(--borde);
+  flex-shrink: 0;
+}
+
+.badge-dev { background: #fff8e1; color: #b45309; border-color: #fde68a; }
 
 /* FOOTER */
 footer {
   border-top: 1px solid var(--borde);
-  padding: 32px 0;
+  padding: 28px 0 40px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
 }
 
-.footer-left {
-  font-size: 12px;
-  color: var(--suave);
-}
-
-.footer-links {
-  display: flex;
-  gap: 20px;
-}
-
+.footer-left { font-size: 12px; color: var(--suave); }
+.footer-links { display: flex; gap: 18px; }
 .footer-link {
-  font-size: 12px;
-  color: var(--suave);
-  text-decoration: none;
-  transition: color 0.15s;
+  font-size: 12px; color: var(--suave);
+  text-decoration: none; transition: color 0.15s;
 }
-
 .footer-link:hover { color: var(--texto); }
 
 @media (max-width: 768px) {
-  .modulos-grid { grid-template-columns: 1fr; }
-  .modulo.featured { grid-column: span 1; }
-  .stats-strip { grid-template-columns: 1fr 1fr; }
+  .grid-principal { grid-template-columns: 1fr; }
+  .grid-secundario { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
   .hero-titulo { font-size: 36px; }
   nav { padding: 0 20px; }
+  .wrap { padding: 0 16px; }
 }
 </style>
 </head>
@@ -489,8 +491,8 @@ footer {
 <nav>
   <div class="nav-logo">SYNTRA</div>
   <div class="nav-right">
-    <div class="nav-status">
-      <div class="status-dot" id="status-dot"></div>
+    <div class="nav-pill">
+      <div class="dot" id="status-dot"></div>
       <span id="status-text">Conectando</span>
     </div>
     <div class="nav-fecha" id="fecha-display"></div>
@@ -501,29 +503,33 @@ footer {
 
   <!-- HERO -->
   <div class="hero">
-    <div class="hero-label">Panel de operaciones</div>
+    <div class="hero-eyebrow">Panel de operaciones</div>
     <div class="hero-titulo">Bienvenido al<br><strong>Portal SYNTRA.</strong></div>
-    <div class="hero-sub">Todo lo que necesitas para operar Syntra — en un solo lugar.</div>
+    <div class="hero-sub">Todo lo que necesitas para operar — proyectos, campo y finanzas en un solo lugar.</div>
   </div>
 
   <!-- STATS -->
-  <div class="stats-strip">
-    <div class="stat">
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-icon">📋</span>
       <div class="stat-label">Proyectos activos</div>
       <div class="stat-valor" id="stat-proyectos">—</div>
-      <div class="stat-sub" id="stat-proyectos-sub">en ejecución</div>
+      <div class="stat-sub">en ejecución</div>
     </div>
-    <div class="stat">
+    <div class="stat-card">
+      <span class="stat-icon">💰</span>
       <div class="stat-label">Por cobrar</div>
       <div class="stat-valor rojo" id="stat-cobrar">—</div>
       <div class="stat-sub">proyectos activos</div>
     </div>
-    <div class="stat">
+    <div class="stat-card">
+      <span class="stat-icon">📊</span>
       <div class="stat-label">Balance del mes</div>
       <div class="stat-valor" id="stat-balance">—</div>
       <div class="stat-sub" id="stat-mes"></div>
     </div>
-    <div class="stat">
+    <div class="stat-card">
+      <span class="stat-icon">🏦</span>
       <div class="stat-label">Cartera de crédito</div>
       <div class="stat-valor" id="stat-cartera">—</div>
       <div class="stat-sub">clientes financiados</div>
@@ -532,89 +538,95 @@ footer {
 
   <!-- APROBACIONES PENDIENTES -->
   <div class="aprobaciones-section" id="aprobaciones-section">
-    <div class="section-label" style="color:var(--rojo)">Ventas pendientes de aprobación</div>
+    <div class="sec-label" style="color:var(--rojo);margin-bottom:16px">⚠ Ventas pendientes de aprobación</div>
     <div id="aprobaciones-lista"></div>
   </div>
 
-  <!-- MÓDULOS -->
-  <div class="section-label">Módulos de la plataforma</div>
+  <!-- MÓDULOS PRINCIPALES -->
+  <div class="sec-label">Módulos principales</div>
+  <div class="grid-principal">
 
-  <div class="modulos-grid">
-
-    <!-- TABLERO DE PROYECTOS -->
-    <a class="modulo featured" href="https://project-hcjec.vercel.app/index.html" target="_blank">
-      <span class="modulo-icono">☀︎</span>
-      <div class="modulo-nombre">Tablero de Proyectos</div>
-      <div class="modulo-desc">Pipeline con las 5 etapas del ciclo de instalación. Checklist de materiales, calendario y reporte semanal.</div>
-      <div class="modulo-footer">
-        <span class="modulo-url">/index.html</span>
-        <span class="modulo-arrow">→</span>
+    <!-- TABLERO -->
+    <a class="modulo mod-proyectos" href="https://project-hcjec.vercel.app/index.html" target="_blank">
+      <div class="mod-icono-wrap">☀︎</div>
+      <div class="mod-nombre">Tablero de Proyectos</div>
+      <div class="mod-desc">Pipeline completo de instalaciones. Checklist de materiales, etapas y seguimiento del equipo.</div>
+      <div class="mod-mini-stats">
+        <div class="mod-mini-stat">
+          <span class="mod-mini-label">Activos</span>
+          <span class="mod-mini-val" id="proy-activos">—</span>
+        </div>
+        <div class="mod-mini-stat">
+          <span class="mod-mini-label">En instalación</span>
+          <span class="mod-mini-val" id="proy-instalados">—</span>
+        </div>
+        <div class="mod-mini-stat">
+          <span class="mod-mini-label">Cerrados</span>
+          <span class="mod-mini-val" id="proy-cerrados">—</span>
+        </div>
       </div>
     </a>
 
     <!-- ADMIN CALENDARIO -->
-    <a class="modulo" href="https://project-hcjec.vercel.app/admin-calendario.html" target="_blank">
-      <span class="modulo-icono">📅</span>
-      <div class="modulo-nombre">Admin — Operaciones & Ventas</div>
-      <div class="modulo-desc">Calendario unificado: trabajos de campo, citas de venta, equipo y pipeline de instalaciones.</div>
-      <div class="modulo-footer">
-        <span class="modulo-url">/admin-calendario.html</span>
-        <span class="modulo-arrow">→</span>
-      </div>
-    </a>
-
-    <!-- PACO CALENDARIO -->
-    <a class="modulo" href="https://project-hcjec.vercel.app/paco-calendario.html" target="_blank">
-      <span class="modulo-icono">🔧</span>
-      <div class="modulo-nombre">Calendario de Campo</div>
-      <div class="modulo-desc">Vista de Paco: agenda instalaciones, mantenimientos, levantamientos y bloqueos del equipo técnico.</div>
-      <div class="modulo-footer">
-        <span class="modulo-url">/paco-calendario.html</span>
-        <span class="modulo-arrow">→</span>
-      </div>
-    </a>
-
-    <!-- TRABAJADOR -->
-    <a class="modulo" href="https://project-hcjec.vercel.app/trabajador.html" target="_blank">
-      <span class="modulo-icono">👷</span>
-      <div class="modulo-nombre">Vista Trabajador</div>
-      <div class="modulo-desc">Cada técnico ve sus trabajos asignados y actualiza el estado desde campo.</div>
-      <div class="modulo-footer">
-        <span class="modulo-url">/trabajador.html</span>
-        <span class="modulo-arrow">→</span>
-      </div>
+    <a class="modulo mod-calendario" href="https://project-hcjec.vercel.app/admin-calendario.html" target="_blank">
+      <div class="mod-icono-wrap">📅</div>
+      <div class="mod-nombre">Operaciones & Ventas</div>
+      <div class="mod-desc">Calendario unificado: trabajos de campo y citas de venta. Gestión del equipo técnico.</div>
     </a>
 
     <!-- FINANZAS -->
-    <a class="modulo" href="https://project-hcjec.vercel.app/syntra-finanzas.html" target="_blank">
-      <span class="modulo-icono">◈</span>
-      <div class="modulo-nombre">Finanzas</div>
-      <div class="modulo-desc">Dashboard mensual, resumen por categoría y vista anual. Registra movimientos y conecta pagos a proyectos.</div>
-      <div class="modulo-footer">
-        <span class="modulo-url">/syntra-finanzas.html</span>
-        <span class="modulo-arrow">→</span>
+    <a class="modulo mod-finanzas" href="https://project-hcjec.vercel.app/syntra-finanzas.html" target="_blank">
+      <div class="mod-icono-wrap">◈</div>
+      <div class="mod-nombre">Finanzas</div>
+      <div class="mod-desc">Dashboard mensual, resumen por categoría y vista anual. Registra movimientos y pagos a proyectos.</div>
+    </a>
+
+  </div>
+
+  <!-- MÓDULOS SECUNDARIOS -->
+  <div class="sec-label" style="margin-top:32px">Herramientas</div>
+  <div class="grid-secundario">
+
+    <a class="mod-secundario" href="https://project-hcjec.vercel.app/contador.html" target="_blank">
+      <div class="mod-sec-icono">◻</div>
+      <div class="mod-sec-body">
+        <div class="mod-sec-nombre">Portal Contador</div>
+        <div class="mod-sec-desc">Cartera de crédito, pagos y UUIDs de facturas</div>
       </div>
     </a>
 
-    <!-- COTIZADOR -->
-    <a class="modulo" href="https://project-hcjec.vercel.app/syntra-cotizador.html" target="_blank">
-      <span class="modulo-icono">⚡</span>
-      <div class="modulo-nombre">Cotizador Solar</div>
-      <div class="modulo-desc">Calcula el sistema ideal por consumo histórico. Tarifa 01 y PDBT. Esquema de pago sugerido.</div>
-      <div class="modulo-footer">
-        <span class="modulo-url">/syntra-cotizador.html</span>
-        <span class="modulo-arrow">→</span>
+    <a class="mod-secundario" href="https://project-hcjec.vercel.app/paco-calendario.html" target="_blank">
+      <div class="mod-sec-icono">🔧</div>
+      <div class="mod-sec-body">
+        <div class="mod-sec-nombre">Calendario de Campo</div>
+        <div class="mod-sec-desc">Vista de Paco — agenda de instalaciones</div>
       </div>
+      <span class="mod-sec-badge">Beta</span>
     </a>
 
-    <!-- CONTADOR -->
-    <a class="modulo" href="https://project-hcjec.vercel.app/contador.html" target="_blank">
-      <span class="modulo-icono">◻</span>
-      <div class="modulo-nombre">Portal Contador</div>
-      <div class="modulo-desc">Cartera de crédito, historial de pagos y UUIDs de facturas. Acceso independiente para el contador.</div>
-      <div class="modulo-footer">
-        <span class="modulo-url">/contador.html</span>
-        <span class="modulo-arrow">→</span>
+    <a class="mod-secundario" href="https://project-hcjec.vercel.app/trabajador.html" target="_blank">
+      <div class="mod-sec-icono">👷</div>
+      <div class="mod-sec-body">
+        <div class="mod-sec-nombre">Vista Trabajador</div>
+        <div class="mod-sec-desc">Técnicos ven y actualizan sus trabajos</div>
+      </div>
+      <span class="mod-sec-badge">Beta</span>
+    </a>
+
+    <a class="mod-secundario" href="https://project-hcjec.vercel.app/syntra-cotizador.html" target="_blank">
+      <div class="mod-sec-icono">⚡</div>
+      <div class="mod-sec-body">
+        <div class="mod-sec-nombre">Cotizador Solar</div>
+        <div class="mod-sec-desc">Calcula el sistema por consumo histórico</div>
+      </div>
+      <span class="mod-sec-badge badge-dev">En desarrollo</span>
+    </a>
+
+    <a class="mod-secundario" href="https://project-hcjec.vercel.app/eco-minutas.html" target="_blank">
+      <div class="mod-sec-icono">📝</div>
+      <div class="mod-sec-body">
+        <div class="mod-sec-nombre">Eco-Minutas</div>
+        <div class="mod-sec-desc">Acuerdos, intenciones y registro de juntas</div>
       </div>
     </a>
 
@@ -625,7 +637,6 @@ footer {
     <div class="footer-left">Syntra Energía Solar · Querétaro, MX</div>
     <div class="footer-links">
       <a href="https://github.com/Alex-gom/Syntra-app" target="_blank" class="footer-link">GitHub</a>
-      <a href="https://vercel.com" target="_blank" class="footer-link">Vercel</a>
       <a href="https://ypmkuroqjhgidqpjhvtj.supabase.co" target="_blank" class="footer-link">Supabase</a>
     </div>
   </footer>
@@ -635,8 +646,7 @@ footer {
 <script>
 const SUPABASE_URL = 'https://ypmkuroqjhgidqpjhvtj.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwbWt1cm9xamhnaWRxcGpodnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTk2MTcsImV4cCI6MjA5NTU3NTYxN30.4yhzqtKRlWJNMbxUyXnTonIicdh8Ose1geHI7wBQlws';
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const fmt = n => '$' + Number(n||0).toLocaleString('es-MX', {minimumFractionDigits:0, maximumFractionDigits:0});
 const now = new Date();
@@ -666,8 +676,6 @@ async function cargarStats() {
     document.getElementById('proy-cerrados').textContent = cerrados;
 
     if (pendientes.length > 0) {
-      document.getElementById('pendientes-badge').style.display = 'block';
-      document.getElementById('pendientes-count').textContent = pendientes.length;
       document.getElementById('aprobaciones-section').style.display = 'block';
       renderPendientes(pendientes);
     }
@@ -686,7 +694,7 @@ async function cargarStats() {
     const { data: cartera } = await db.from('cartera_credito').select('id');
     document.getElementById('stat-cartera').textContent = cartera?.length || 0;
 
-    document.getElementById('status-dot').className = 'status-dot ok';
+    document.getElementById('status-dot').className = 'dot ok';
     document.getElementById('status-text').textContent = 'Conectado';
 
   } catch(e) {
@@ -700,7 +708,7 @@ function renderPendientes(pendientes) {
       <div class="aprobacion-header">
         <div>
           <div class="aprobacion-nombre">${p.clientes?.nombre||'Sin nombre'}</div>
-          <div class="aprobacion-meta">Vendedor: ${p.vendedor||'—'} · ${p.fecha_instalacion?p.fecha_instalacion:'Sin fecha'}</div>
+          <div class="aprobacion-meta">Vendedor: ${p.vendedor||'—'} · ${p.fecha_instalacion||'Sin fecha'}</div>
         </div>
         <div class="aprobacion-monto">${fmt(p.monto)}</div>
       </div>
@@ -711,11 +719,11 @@ function renderPendientes(pendientes) {
         </div>
         <div class="aprobacion-item">
           <div class="aprobacion-item-label">Inversor</div>
-          <div class="aprobacion-item-valor" style="font-size:14px">${p.inversor||'—'}</div>
+          <div class="aprobacion-item-valor" style="font-size:13px">${p.inversor||'—'}</div>
         </div>
         <div class="aprobacion-item">
           <div class="aprobacion-item-label">Anticipo</div>
-          <div class="aprobacion-item-valor" style="font-size:16px">${fmt(p.cobrado)}</div>
+          <div class="aprobacion-item-valor" style="font-size:15px">${fmt(p.cobrado)}</div>
         </div>
       </div>
       ${p.notas?`<div class="aprobacion-notas">${p.notas}</div>`:''}
